@@ -1,11 +1,11 @@
 <?php
 // edit_category.php
 
-require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../config.php'; // lidhja me databazen
+require_once __DIR__ . '/../includes/functions.php'; // funksionet e pergjithshme
 
-session_start();
-require_login();
+session_start(); // fillohet sessioni per te ruajtur user_id dhe tokenin CSRF
+require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne login.php
 
 $user_id = $_SESSION['user_id'];
 $cat_id  = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
@@ -13,8 +13,8 @@ $errors  = [];
 $colors  = category_colors();
 
 if ($cat_id <= 0) {
-    $_SESSION['flash_error'] = 'Kategoria nuk u gjet.';
-    redirect('../categories.php');
+    $_SESSION['flash_error'] = 'Kategoria nuk u gjet.'; // nese id e kategorise eshte e pavlefshme, e shton nje gabim ne session dhe e kthen ne categories.php
+    redirect('../categories.php'); // kthen ne categories.php
 }
 
 // Ngarko kategorine - VETEM nese i perket userit

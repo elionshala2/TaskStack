@@ -1,15 +1,15 @@
 <?php
 // add_task.php
 
-require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../config.php'; // lidhja me databazen dhe konfigurimet e tjera
+require_once __DIR__ . '/../includes/functions.php'; // funksionet e pergjithshme
 
-session_start();
-require_login();
+session_start(); // fillimi i sesionit per session id
+require_login(); // nese perdoruesi nuk eshte i kyqur e bon redirect ne faqen e login.php
 
-$user_id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id']; // merr id e perdoruesit aktual nga sesioni
 $errors  = [];
-$old = [
+$old = [ // vlerat e vjetra te formit per me i mbush formet nese ka gabime
     'title'       => '',
     'description' => '',
     'priority'    => 'medium',
@@ -21,7 +21,7 @@ $old = [
 $categories = [];
 try {
     $stmt = $conn->prepare(
-        "SELECT id, name, color FROM categories WHERE user_id = ? ORDER BY name ASC"
+        "SELECT id, name, color FROM categories WHERE user_id = ? ORDER BY name ASC" // merr kategorite e userit aktual nga databaza
     );
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
@@ -31,13 +31,13 @@ try {
     }
     $stmt->close();
 } catch (mysqli_sql_exception $e) {
-    error_log("Load categories error: " . $e->getMessage());
+    error_log("Load categories error: " . $e->getMessage()); // nese ka nje gabim ne query, e logon gabimin ne error_log
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!verify_csrf($_POST['csrf'] ?? '')) {
-        $errors[] = 'Kerkese e pavlefshme. Provo perseri.';
+        $errors[] = 'Kerkese e pavlefshme. Provo perseri.'; // nese tokeni CSRF nuk eshte valid, e shton nje gabim ne array
     } else {
         $old['title']       = trim($_POST['title'] ?? '');
         $old['description'] = trim($_POST['description'] ?? '');
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $stmt = $conn->prepare(
                     "INSERT INTO tasks (user_id, title, description, priority, due_date, category_id)
-                     VALUES (?, ?, ?, ?, ?, ?)"
+                     VALUES (?, ?, ?, ?, ?, ?)" // shton nje detyre te re per userin aktual
                 );
 
                 $stmt->bind_param(

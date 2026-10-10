@@ -1,14 +1,14 @@
 <?php
 // signup.php
 
-require_once __DIR__ . '/config.php'; // __DIR__ eshte folderi prind i ketij file
-require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/config.php'; // lidhja me databazen
+require_once __DIR__ . '/includes/functions.php'; // funksionet e pergjithshme
 
-session_start();
+session_start(); // fillohet sessioni per te ruajtur user_id dhe tokenin CSRF
 
 // Nese je i kyqur shko ne dashboard direkt
 if (!empty($_SESSION['user_id'])) {
-    redirect('dashboard.php');
+    redirect('dashboard.php'); // nese useri eshte i kyqur, e kthen ne dashboard
 }
 
 $errors = []; // per grumbullim te erroreve
@@ -16,6 +16,7 @@ $old = ['username' => '', 'email' => '']; // qe vlerat e formes mos te fshihen n
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    // mbrojtja kunder sulmeve CSRF - Cross-Site Request Forgery
     if (!verify_csrf($_POST['csrf'] ?? '')) {
         $errors[] = 'Kerkese e pavlefshme. Provo perseri.';
     } else {

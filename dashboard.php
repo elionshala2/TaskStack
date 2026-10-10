@@ -1,27 +1,27 @@
 <?php
 // dashboard.php
 
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/config.php'; // lidhja me databazen
+require_once __DIR__ . '/includes/functions.php'; // funksionet e pergjithshme
 
-session_start();
-require_login();
+session_start(); // fillohet sessioni per te ruajtur user_id dhe tokenin CSRF
+require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne login.php
 
-$user_id  = $_SESSION['user_id'];
-$username = $_SESSION['username'];
+$user_id  = $_SESSION['user_id']; // ruan user_id nga sessioni
+$username = $_SESSION['username']; // ruan username nga sessioni
 
-$today = date('Y-m-d');
+$today = date('Y-m-d'); // ruan daten aktuale per kalendar per detyrat e vonuara ose te sotme, me format YYYY-MM-DD
 
 // URL per filtrat (status + kategori + kerkim)
-function dash_url(string $filter, string $cat, string $q = ''): string {
-    $params = [];
-    if ($filter !== 'all') $params['filter'] = $filter;
+function dash_url(string $filter, string $cat, string $q = ''): string { 
+    $params = []; // array per te ruajtur parametrat e URL
+    if ($filter !== 'all') $params['filter'] = $filter; 
     if ($cat !== 'all')    $params['cat']    = $cat;
     if ($q !== '')         $params['q']      = $q;
     return 'dashboard.php' . ($params ? '?' . http_build_query($params) : '');
 }
 
-$priority_labels = [
+$priority_labels = [ // array me etiketat e prioritetit
     'low'    => 'Ulet',
     'medium' => 'Mesatar',
     'high'   => 'Larte',
@@ -36,16 +36,16 @@ try {
          FROM categories
          WHERE user_id = ?
          ORDER BY name ASC"
-    );
+    ); // prepare nje query per te marre kategorite e userit nga databaza, te renditura sipas emrit
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
+    while ($row = $result->fetch_assoc()) { // merr secilen kategori dhe e shton ne array
         $row['color'] = safe_color($row['color'] ?? null);
         $categories[(int)$row['id']] = $row;
     }
     $stmt->close();
-} catch (mysqli_sql_exception $e) {
+} catch (mysqli_sql_exception $e) { // nese ka gabim ne query, e logon gabimin dhe e ben array bosh
     error_log("Dashboard categories error: " . $e->getMessage());
     $categories = [];
 }

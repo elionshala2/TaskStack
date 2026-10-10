@@ -1,19 +1,19 @@
 <?php
 // login.php
 
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/config.php'; // lidhja me databazen
+require_once __DIR__ . '/includes/functions.php'; // funksionet e pergjithshme
 
-session_start();
+session_start(); // startohet sessioni per te ruajtur user_id dhe tokenin CSRF
 
 // Nese tashme i kyqur shkon ne dashboard
 if (!empty($_SESSION['user_id'])) {
-    redirect('dashboard.php');
+    redirect('dashboard.php'); // redirect ne dashboard nese useri eshte i kyqur
 }
 
-$errors  = [];
-$success = '';
-$old_email = '';
+$errors  = []; // array per te ruajtur gabimet
+$success = ''; // mesazh suksesi nga signup.php
+$old_email = ''; // variabla per te mbajtur emailin e futur ne rast gabimi
 
 // Flash nga signup (mesazh suksesi)
 if (!empty($_SESSION['flash_success'])) {
@@ -23,7 +23,7 @@ if (!empty($_SESSION['flash_success'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $ip = client_ip();
+    $ip = client_ip(); // merr IP e klientit per rate limiting
 
     // CSRF kundrej sulmeve
     if (!verify_csrf($_POST['csrf'] ?? '')) {
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Rate limiting: max 5 tentativa per IP
     } elseif (login_attempts_count($conn, $ip) >= MAX_LOGIN_ATTEMPTS) {
-        $errors[] = 'Shume tentativa te pasuksesshme. Provo perseri pas ' . LOGIN_WINDOW_MINUTES . ' minutash.';
+        $errors[] = 'Shume tentativa te pasuksesshme. Provo perseri pas ' . LOGIN_WINDOW_MINUTES . ' minutash.'; // nuk tregon sa minuta, vetem mesazh i pergjithshem (ne kete rast 15 minuta)
 
     } else {
         $email    = trim($_POST['email'] ?? '');

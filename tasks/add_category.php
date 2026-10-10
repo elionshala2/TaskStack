@@ -1,37 +1,37 @@
 <?php
 // add_category.php
 
-require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../config.php'; // lidhja me databazen
+require_once __DIR__ . '/../includes/functions.php'; // funksionet e pergjithshme
 
-session_start();
-require_login();
+session_start(); // fillohet sessioni per te ruajtur user_id dhe tokenin CSRF
+require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne login.php
 
-$user_id = $_SESSION['user_id'];
-$errors  = [];
-$colors  = category_colors();
-$old = [
+$user_id = $_SESSION['user_id']; // merr user_id nga sessioni
+$errors  = []; // array per te ruajtur gabimet e validimit
+$colors  = category_colors(); // array me ngjyrat e lejuara per kategorite
+$old = [ // array per te ruajtur vlerat e derguara nga useri ne rast gabimi
     'name'  => '',
     'color' => $colors[0],
 ];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { // kontrollon nese forma eshte derguar me POST
 
-    if (!verify_csrf($_POST['csrf'] ?? '')) {
+    if (!verify_csrf($_POST['csrf'] ?? '')) { // kontrollon nese tokeni CSRF eshte valid, nese jo e shton nje gabim ne array
         $errors[] = 'Kerkese e pavlefshme. Provo perseri.';
-    } else {
+    } else { 
         $old['name']  = trim($_POST['name'] ?? '');
         $old['color'] = $_POST['color'] ?? $colors[0];
 
         // Validime
-        if ($old['name'] === '') {
+        if ($old['name'] === '') { // nese emri i kategorise eshte bosh, e shton nje gabim ne array
             $errors[] = 'Emri i kategorise eshte i detyrueshem.';
-        } elseif (mb_strlen($old['name']) > 50) {
+        } elseif (mb_strlen($old['name']) > 50) { // nese emri i kategorise eshte me i gjate se 50 karaktere, e shton nje gabim ne array
             $errors[] = 'Emri nuk duhet te kaloje 50 karaktere.';
         }
 
         if (!in_array($old['color'], $colors, true)) {
-            $errors[] = 'Ngjyre e pavlefshme.';
+            $errors[] = 'Ngjyre e pavlefshme.'; // nese ngjyra e zgjedhur nuk eshte ne array me ngjyrat e lejuara, e shton nje gabim ne array
         }
 
         // Mos lejo dy kategori me te njejtin emer per te njejtin user
@@ -40,15 +40,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $conn->prepare(
                     "SELECT id FROM categories WHERE user_id = ? AND name = ? LIMIT 1"
                 );
-                $stmt->bind_param("is", $user_id, $old['name']);
-                $stmt->execute();
-                $stmt->store_result();
-                if ($stmt->num_rows > 0) {
-                    $errors[] = 'Ke tashme nje kategori me kete emer.';
+                $stmt->bind_param("is", $user_id, $old['name']); // kontrollon nese ekziston nje kategori me te njejtin emer per te njejtin user
+                $stmt->execute(); // ekzekuton query-n
+                $stmt->store_result(); // ruan rezultatin e query-t ne memorie per te kontrolluar numrin e rreshtave
+                if ($stmt->num_rows > 0) { // nese ekziston nje kategori me te njejtin emer per te njejtin user, e shton nje gabim ne array
+                    $errors[] = 'Ke tashme nje kategori me kete emer.'; // nese ekziston nje kategori me te njejtin emer per te njejtin user, e shton nje gabim ne array
                 }
-                $stmt->close();
-            } catch (mysqli_sql_exception $e) {
-                error_log("Check category error: " . $e->getMessage());
+                $stmt->close(); // mbyll statementin
+            } catch (mysqli_sql_exception $e) { // nese ka nje gabim ne query, e shton nje gabim ne array dhe e logon gabimin ne error_log
+                error_log("Check category error: " . $e->getMessage()); // nese ka nje gabim ne query, e shton nje gabim ne array dhe e logon gabimin ne error_log
                 $errors[] = 'Diqka shkoi gabim. Provo perseri.';
             }
         }
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($errors)) {
             try {
                 $stmt = $conn->prepare(
-                    "INSERT INTO categories (user_id, name, color) VALUES (?, ?, ?)"
+                    "INSERT INTO categories (user_id, name, color) VALUES (?, ?, ?)" // shton nje kategori te re per userin aktual
                 );
                 $stmt->bind_param("iss", $user_id, $old['name'], $old['color']);
                 $stmt->execute();
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-<?php require_once __DIR__ . '/../includes/navbar.php'; ?>
+<?php require_once __DIR__ . '/../includes/navbar.php'; ?> <!-- e perfshin navbarin nga includes/navbar.php -->
 
 <main class="page-center">
     <div class="page-header">
@@ -125,6 +125,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </form>
 </main>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?> <!-- e perfshin footerin nga includes/footer.php -->
 </body>
 </html>

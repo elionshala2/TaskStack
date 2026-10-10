@@ -2,11 +2,11 @@
 // includes/functions.php
 
 // Escape Output -- mbrojtja nga sulmet XSS
-function e($str) {
+function e($str) { // teksti nga useri shikohet nga htmlspecialchars per XSS
     return htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-// CSRF tokeni -- mbrojtja nga sulmet CSRF
+// CSRF tokeni -- mbrojtja nga sulmet CSRF - Cross Site Request Forgery
 function csrf_token() {
     if (empty($_SESSION['csrf'])) {
         $_SESSION['csrf'] = bin2hex(random_bytes(32));
@@ -14,17 +14,17 @@ function csrf_token() {
     return $_SESSION['csrf'];
 }
 
-function verify_csrf($token) {
+function verify_csrf($token) { // verifikimi i tokenit te CSRF me lart ^^^
     return isset($_SESSION['csrf']) && hash_equals($_SESSION['csrf'], $token ?? '');
 }
 
-// Redirecti
+// redirect userin ne URL te caktuar edhe e bon scriptin exit
 function redirect($url) {
     header("Location: $url");
     exit;
 }
 
-// Kontrollon nese useri eshte i kyqur ne llogari
+// Kontrollon nese useri osht i kyqur, nese jo e perdor funksionin redirect per me kthy ne login
 function require_login() {
     if (empty($_SESSION['user_id'])) {
         $prefix = str_contains($_SERVER['SCRIPT_NAME'], '/tasks/') ? '../' : '';
@@ -32,7 +32,7 @@ function require_login() {
     }
 }
 
-// Siguron qe useri te kaje kategorine default "Inbox"
+// Siguron qe useri te ka kategorine default "Inbox"
 function ensure_default_category($conn, $user_id) {
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM categories WHERE user_id = ?");
     $stmt->bind_param("i", $user_id);
@@ -62,18 +62,19 @@ function category_colors() {
     return ['#3b82f6', '#7c3aed', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#64748b'];
 }
 
-// =========================================================
+// =================================================================
 // Rate limiting per login (max 5 tentativa per IP)
-// Nese tabela login_attempts nuk ekziston, login-i vazhdon normalisht
-// =========================================================
-define('MAX_LOGIN_ATTEMPTS', 5);
-define('LOGIN_WINDOW_MINUTES', 15);
+// Nese tabela login_attempts nuk ekziston, login-i vazhdon normalisht, nuk e krijon per arsyje sigurie
+// =================================================================
 
-function client_ip() {
+define('MAX_LOGIN_ATTEMPTS', 5); // maksimum 5 tentative per IP, mund te ndryshohet
+define('LOGIN_WINDOW_MINUTES', 15); // 15 minuta nuk mund te tentohet per IP
+
+function client_ip() { // merr IP e klientit, nese nuk ekziston kthen 0.0.0.0
     return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 }
 
-function login_attempts_count($conn, $ip) {
+function login_attempts_count($conn, $ip) { // kontrollon sa tentativa ka pasur IPja e dhene, nese ka me shume se 5 kthen 0, nese jo kthen numrin e tentativave
     try {
         $stmt = $conn->prepare(
             "SELECT COUNT(*) AS c FROM login_attempts
@@ -90,7 +91,7 @@ function login_attempts_count($conn, $ip) {
     }
 }
 
-function record_login_attempt($conn, $ip) {
+function record_login_attempt($conn, $ip) { // regjistron nje tentative per IP e dhene
     try {
         $stmt = $conn->prepare("INSERT INTO login_attempts (ip) VALUES (?)");
         $stmt->bind_param("s", $ip);
@@ -101,7 +102,7 @@ function record_login_attempt($conn, $ip) {
     }
 }
 
-function clear_login_attempts($conn, $ip) {
+function clear_login_attempts($conn, $ip) { // nese useri kyqet me sukses i fshin tentativat e IPse nga databaza
     try {
         $stmt = $conn->prepare("DELETE FROM login_attempts WHERE ip = ?");
         $stmt->bind_param("s", $ip);

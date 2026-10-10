@@ -1,14 +1,14 @@
 <?php
 // categories.php
 
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/config.php'; // lidhja me databazen
+require_once __DIR__ . '/includes/functions.php'; // funksionet e pergjithshme
 
-session_start();
-require_login();
+session_start(); // fillohet sessioni per te ruajtur user_id dhe tokenin CSRF
+require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne login.php
 
-$user_id  = $_SESSION['user_id'];
-$username = $_SESSION['username'];
+$user_id  = $_SESSION['user_id']; // merr user_id nga sessioni
+$username = $_SESSION['username']; // merr username nga sessioni
 
 // Merr te gjitha kategorite e userit
 $sql = "SELECT id, name, color, is_default, created_at
@@ -16,7 +16,7 @@ $sql = "SELECT id, name, color, is_default, created_at
         WHERE user_id = ?
         ORDER BY is_default DESC, created_at DESC";
 
-$categories = [];
+$categories = []; // array per te ruajtur kategorite e userit
 
 try {
     $stmt = $conn->prepare($sql);

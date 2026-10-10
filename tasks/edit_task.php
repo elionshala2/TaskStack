@@ -1,14 +1,14 @@
 <?php
 // edit_task.php
 
-require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../config.php'; // lidhja me databazen
+require_once __DIR__ . '/../includes/functions.php'; // funksionet e pergjithshme
 
-session_start();
-require_login();
+session_start(); // fillohet sessioni per te ruajtur user_id dhe tokenin CSRF
+require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne login.php
 
 $user_id = $_SESSION['user_id'];
-$task_id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
+$task_id = (int)($_GET['id'] ?? $_POST['id'] ?? 0); // merr id e taskut nga GET ose POST, nese nuk ekziston e ben 0
 $errors  = [];
 
 // Nese ID e pavlefshme
@@ -17,11 +17,12 @@ if ($task_id <= 0) {
     redirect('../dashboard.php');
 }
 
-// -------------------------------------------------
+// ------------------------------------------------------
 // 1. Ngarko taskun - VETEM nese i perket userit
-// -------------------------------------------------
+// ------------------------------------------------------
+
 function load_task($conn, $task_id, $user_id) {
-    $stmt = $conn->prepare(
+    $stmt = $conn->prepare( // ngarko taskun nga databaza, vetem nese i perket userit aktual
         "SELECT id, title, description, priority, due_date, is_completed, category_id
          FROM tasks
          WHERE id = ? AND user_id = ?
@@ -72,6 +73,7 @@ try {
 // -------------------------------------------------
 // Dergimi i formes
 // -------------------------------------------------
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!verify_csrf($_POST['csrf'] ?? '')) {

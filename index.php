@@ -1,13 +1,13 @@
 <?php
 // index.php - Faqja kryesore
 
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/config.php'; // lidhja me databazen
+require_once __DIR__ . '/includes/functions.php'; // funksionet e pergjithshme
 
-session_start();
+session_start(); // fillohet sessioni per te ruajtur user_id dhe tokenin CSRF
 
-$isLoggedIn = !empty($_SESSION['user_id']);
-$username   = $_SESSION['username'] ?? '';
+$isLoggedIn = !empty($_SESSION['user_id']); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne login.php
+$username   = $_SESSION['username'] ?? ''; // ruan username nese useri eshte i kyqur, ose e ben bosh nese jo
 ?>
 <!DOCTYPE html>
 <html lang="sq">

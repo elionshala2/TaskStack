@@ -1,10 +1,10 @@
 <?php
 // config.php
 
-$server   = "localhost";
-$user     = "root";
-$pass     = "";
-$database = "todolist";
+$server   = "localhost"; // serveri i databazes
+$user     = "root"; // perdoruesi i databazes
+$pass     = ""; // passwordi i databazes
+$database = "todolist"; // emri i databazes
 
 // fshehja e qdo gabimi prej outputit (shfaqen vetem ne log qe mos me i pa perdoruesi)
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);

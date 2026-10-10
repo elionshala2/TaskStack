@@ -2,10 +2,11 @@
 // includes/footer.php
 
 // footer-i perdoret edhe nga faqet ne /tasks, prandaj duhet prefix
-$f_inTasks   = str_contains($_SERVER['PHP_SELF'], '/tasks/');
-$f_prefix    = $f_inTasks ? '../' : '';
-$f_loggedIn  = !empty($_SESSION['user_id']);
-?>
+$f_inTasks   = str_contains($_SERVER['PHP_SELF'], '/tasks/'); // e shikon nese perdoruesi eshte ne folderin /tasks per me ndrru direktorin ne linqet e footerit
+$f_prefix    = $f_inTasks ? '../' : ''; //  operator ternar per prefix, nese perdoruesi eshte ne /tasks prefixi osht ../ nese jo osht that
+$f_loggedIn  = !empty($_SESSION['user_id']); // shikon neser perdoruesi eshte i kyqur ose jo
+// nese perdoruesi osht i kyqur i tregon edhe linqet e dashboardit, kategorise edhe te logoutit nese jo i tregon linqet e loginit edhe te regjistrimit
+?> 
 <footer class="site-footer">
     <div class="footer-inner">
         <div class="footer-brand">
@@ -26,7 +27,7 @@ $f_loggedIn  = !empty($_SESSION['user_id']);
         </div>
 
         <div class="footer-copy">
-            &copy; <?= date('Y') ?> To-Do List. Te gjitha te drejtat e rezervuara.
+            &copy; <?= date('Y') ?> To-Do List. Te gjitha te drejtat e rezervuara. <!--perdor php per vitin-->
             Elion Shala
         </div>
     </div>
