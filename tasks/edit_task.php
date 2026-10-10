@@ -13,12 +13,12 @@ $errors  = [];
 
 // Nese ID e pavlefshme
 if ($task_id <= 0) {
-    $_SESSION['flash_success'] = 'Detyra nuk u gjet.';
+    $_SESSION['flash_error'] = 'Detyra nuk u gjet.';
     redirect('../dashboard.php');
 }
 
 // -------------------------------------------------
-// 1. Ngarko taskun — VETEM nese i perket userit
+// 1. Ngarko taskun - VETEM nese i perket userit
 // -------------------------------------------------
 function load_task($conn, $task_id, $user_id) {
     $stmt = $conn->prepare(
@@ -38,8 +38,8 @@ function load_task($conn, $task_id, $user_id) {
 $task = load_task($conn, $task_id, $user_id);
 
 if (!$task) {
-    // ose nuk ekziston, ose si perket kti useri
-    $_SESSION['flash_success'] = 'Detyra nuk u gjet.';
+    // ose nuk ekziston, ose nuk i perket ketij useri
+    $_SESSION['flash_error'] = 'Detyra nuk u gjet.';
     redirect('../dashboard.php');
 }
 
@@ -52,7 +52,7 @@ $old = [
     'category_id' => $task['category_id'] ?? '',
 ];
 
-// Load user's categories
+// Ngarko kategorite e userit
 $categories = [];
 try {
     $stmt = $conn->prepare(
@@ -101,12 +101,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Kategoria duhet te jete e userit aktual
+        $category_id = !empty($old['category_id']) ? (int)$old['category_id'] : null;
+        if ($category_id !== null && !in_array($category_id, array_map('intval', array_column($categories, 'id')), true)) {
+            $errors[] = 'Kategori e pavlefshme.';
+        }
+
         if (empty($errors)) {
             try {
                 $due = $old['due_date'] === '' ? null : $old['due_date'];
-                $category_id = !empty($old['category_id']) ? (int)$old['category_id'] : null;
 
-                // UPDATE — VETËM nëse task i përket userit (dyfish siguri)
+                // UPDATE - vetem nese task i perket userit (dyfish siguri)
                 $stmt = $conn->prepare(
                     "UPDATE tasks
                      SET title = ?, description = ?, priority = ?, due_date = ?, category_id = ?
@@ -127,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute();
                 $stmt->close();
 
-                $_SESSION['flash_success'] = 'Detyra u përditësua me sukses!';
+                $_SESSION['flash_success'] = 'Detyra u perditesua me sukses!';
                 redirect('../dashboard.php');
 
             } catch (mysqli_sql_exception $e) {
@@ -139,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sq">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -150,16 +155,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-<!-- <nav class="navbar">
-    <a href="../dashboard.php" class="logo">To-Do List</a>
-    <div class="nav-links">
-        <a href="../dashboard.php" class="btn-outline">← Kthehu</a>
-    </div>
-</nav> -->
 <?php require_once __DIR__ . '/../includes/navbar.php'; ?>
 
-<main class="dashboard">
-    <h1>Edito detyren</h1>
+<main class="page-center">
+    <div class="page-header">
+        <p class="eyebrow">Ndryshime</p>
+        <h1>Edito detyren</h1>
+    </div>
 
     <?php if (!empty($errors)): ?>
         <div class="alert error">
@@ -173,28 +175,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="id"   value="<?= (int)$task_id ?>">
 
-        <label>Titulli *</label>
+        <label>Titulli * <span class="counter" id="titleCount"></span></label>
         <input type="text" name="title" maxlength="255"
                value="<?= e($old['title']) ?>" required autofocus>
 
         <label>Pershkrimi (opsional)</label>
         <textarea name="description" rows="4"><?= e($old['description']) ?></textarea>
 
-        <label>Prioriteti</label>
-        <select name="priority">
-            <option value="low"    <?= $old['priority'] === 'low'    ? 'selected' : '' ?>>Low</option>
-            <option value="medium" <?= $old['priority'] === 'medium' ? 'selected' : '' ?>>Medium</option>
-            <option value="high"   <?= $old['priority'] === 'high'   ? 'selected' : '' ?>>High</option>
-        </select>
-
-        <label>Data (opsionale)</label>
-        <input type="date" name="due_date" value="<?= e($old['due_date']) ?>">
+        <div class="form-row">
+            <div>
+                <label>Prioriteti</label>
+                <select name="priority">
+                    <option value="low"    <?= $old['priority'] === 'low'    ? 'selected' : '' ?>>Low</option>
+                    <option value="medium" <?= $old['priority'] === 'medium' ? 'selected' : '' ?>>Medium</option>
+                    <option value="high"   <?= $old['priority'] === 'high'   ? 'selected' : '' ?>>High</option>
+                </select>
+            </div>
+            <div>
+                <label>Data (opsionale)</label>
+                <input type="date" name="due_date" value="<?= e($old['due_date']) ?>">
+            </div>
+        </div>
 
         <label>Kategoria</label>
         <select name="category_id">
             <option value="">-- Pa kategori --</option>
             <?php foreach ($categories as $cat): ?>
-                <option value="<?= (int)$cat['id'] ?>" <?= $old['category_id'] == $cat['id'] ? 'selected' : '' ?>>
+                <option value="<?= (int)$cat['id'] ?>" <?= (string)$old['category_id'] === (string)$cat['id'] ? 'selected' : '' ?>>
                     <?= e($cat['name']) ?>
                 </option>
             <?php endforeach; ?>
@@ -206,6 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </form>
 </main>
+
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
 </body>
 </html>

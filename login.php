@@ -6,7 +6,7 @@ require_once __DIR__ . '/includes/functions.php';
 
 session_start();
 
-// Nese tashme i kyqyur shkon ne dashboard
+// Nese tashme i kyqur shkon ne dashboard
 if (!empty($_SESSION['user_id'])) {
     redirect('dashboard.php');
 }
@@ -23,9 +23,16 @@ if (!empty($_SESSION['flash_success'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    $ip = client_ip();
+
     // CSRF kundrej sulmeve
     if (!verify_csrf($_POST['csrf'] ?? '')) {
-        $errors[] = 'Kërkesë e pavlefshme. Provo përsëri.';
+        $errors[] = 'Kerkese e pavlefshme. Provo perseri.';
+
+    // Rate limiting: max 5 tentativa per IP
+    } elseif (login_attempts_count($conn, $ip) >= MAX_LOGIN_ATTEMPTS) {
+        $errors[] = 'Shume tentativa te pasuksesshme. Provo perseri pas ' . LOGIN_WINDOW_MINUTES . ' minutash.';
+
     } else {
         $email    = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
@@ -33,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Kontrollon nese eshte thate
         if ($email === '' || $password === '') {
-            $errors[] = 'Plotëso të gjitha fushat.';
+            $errors[] = 'Ploteso te gjitha fushat.';
         } else {
             try {
                 // Kerko user-in ne databaze
@@ -46,13 +53,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $user   = $result->fetch_assoc();
                 $stmt->close();
 
-                //  Verifiko passwordin
+                // Verifiko passwordin
                 if ($user && password_verify($password, $user['password'])) {
 
                     // Rigjenero session ID (mbrojtje session fixation)
                     session_regenerate_id(true);
 
-                    //  Ruaj ne sesion
+                    // Pastro tentativat e vjetra per kete IP
+                    clear_login_attempts($conn, $ip);
+
+                    // Ruaj ne sesion
                     $_SESSION['user_id']  = $user['id'];
                     $_SESSION['username'] = $user['username'];
 
@@ -60,8 +70,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     redirect('dashboard.php');
 
                 } else {
-                    // Mesazh i pergjithshem
-                    $errors[] = 'Email ose password i gabuar.';
+                    // Numro tentativen e gabuar
+                    record_login_attempt($conn, $ip);
+
+                    // Mesazh i pergjithshem (nuk tregon a ekziston emaili)
+                    $errors[] = 'Kredencialet e pavlefshme.';
                 }
 
             } catch (mysqli_sql_exception $e) {
@@ -73,27 +86,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sq">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - To-Do List</title>
-    <link rel="stylesheet" href="assets/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-    <!--<nav class="navbar">
-    <a href="index.php" class="logo">To-Do List</a>
-    <div class="nav-links">
-        <a href="index.php" class="btn-outline">← Kthehu</a>
-        <a href="signup.php" class="btn">Signup</a>
-    </div>
-</nav> -->
 <?php require_once __DIR__ . '/includes/navbar.php'; ?>
+
 <div class="auth-box">
     <h1>Login</h1>
+    <p class="auth-sub">Mire se u ktheve. Hyr per te pare detyrat e tua.</p>
 
     <?php if ($success): ?>
         <div class="alert success"><p><?= e($success) ?></p></div>
@@ -123,8 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </form>
 
     <p>Nuk ke llogari? <a href="signup.php">Regjistrohu</a></p>
-    <p><a href="index.php">← Kthehu ne faqen kryesore</a></p>
+    <p><a href="index.php">&larr; Kthehu ne faqen kryesore</a></p>
 </div>
+
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
 </body>
 </html>

@@ -12,23 +12,22 @@ $username = $_SESSION['username'];
 
 $today = date('Y-m-d');
 
-function dash_safe_color($c): string {
-    return (is_string($c) && preg_match('/^#[0-9a-fA-F]{6}$/', $c)) ? $c : '#3b82f6';
-}
-
-function dash_url(string $filter, string $cat): string {
-    $q = [];
-    if ($filter !== 'all') $q['filter'] = $filter;
-    if ($cat !== 'all')    $q['cat']    = $cat;
-    return 'dashboard.php' . ($q ? '?' . http_build_query($q) : '');
+// URL per filtrat (status + kategori + kerkim)
+function dash_url(string $filter, string $cat, string $q = ''): string {
+    $params = [];
+    if ($filter !== 'all') $params['filter'] = $filter;
+    if ($cat !== 'all')    $params['cat']    = $cat;
+    if ($q !== '')         $params['q']      = $q;
+    return 'dashboard.php' . ($params ? '?' . http_build_query($params) : '');
 }
 
 $priority_labels = [
-    'low'    => 'Ulët',
+    'low'    => 'Ulet',
     'medium' => 'Mesatar',
-    'high'   => 'Lartë',
+    'high'   => 'Larte',
 ];
 
+// ---------- Kategorite e userit ----------
 $categories = [];
 
 try {
@@ -42,7 +41,7 @@ try {
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
-        $row['color'] = dash_safe_color($row['color'] ?? null);
+        $row['color'] = safe_color($row['color'] ?? null);
         $categories[(int)$row['id']] = $row;
     }
     $stmt->close();
@@ -51,6 +50,7 @@ try {
     $categories = [];
 }
 
+// ---------- Filtrat nga URL ----------
 $filter = $_GET['filter'] ?? 'all';
 if (!in_array($filter, ['all', 'active', 'completed'], true)) {
     $filter = 'all';
@@ -64,6 +64,12 @@ if ($cat_raw === 'none') {
     $cat_filter = (string)(int)$cat_raw;
 }
 
+$q = trim((string)($_GET['q'] ?? ''));
+if (mb_strlen($q) > 100) {
+    $q = mb_substr($q, 0, 100);
+}
+
+// ---------- Statistikat ----------
 $stats = ['total' => 0, 'active' => 0, 'completed' => 0, 'overdue' => 0];
 $count_by_cat = [];
 $count_none   = 0;
@@ -98,6 +104,7 @@ try {
 
 $percent_done = $stats['total'] > 0 ? (int)round($stats['completed'] / $stats['total'] * 100) : 0;
 
+// ---------- Lista e detyrave ----------
 $sql = "SELECT t.id, t.title, t.description, t.priority, t.due_date, t.is_completed,
                t.created_at, t.category_id
         FROM tasks t
@@ -115,8 +122,16 @@ if ($cat_filter === 'none') {
     $sql .= " AND t.category_id IS NULL";
 } elseif ($cat_filter !== 'all') {
     $sql .= " AND t.category_id = ?";
-    $types  .= "i";
+    $types   .= "i";
     $params[] = (int)$cat_filter;
+}
+
+if ($q !== '') {
+    $sql .= " AND (t.title LIKE ? OR t.description LIKE ?)";
+    $types   .= "ss";
+    $like     = '%' . $q . '%';
+    $params[] = $like;
+    $params[] = $like;
 }
 
 $sql .= " ORDER BY t.is_completed ASC,
@@ -141,14 +156,25 @@ try {
     $tasks = [];
 }
 
-$filters_active = ($filter !== 'all' || $cat_filter !== 'all');
+$filters_active = ($filter !== 'all' || $cat_filter !== 'all' || $q !== '');
 
 // flash nga veprimet (add/edit/delete)
 $flash = '';
+$flash_error = '';
 if (!empty($_SESSION['flash_success'])) {
     $flash = $_SESSION['flash_success'];
     unset($_SESSION['flash_success']);
 }
+if (!empty($_SESSION['flash_error'])) {
+    $flash_error = $_SESSION['flash_error'];
+    unset($_SESSION['flash_error']);
+}
+
+// pershendetje sipas ores
+$hour = (int)date('G');
+if ($hour < 12)      { $greet = 'Miremengjes'; }
+elseif ($hour < 18)  { $greet = 'Mirdita'; }
+else                 { $greet = 'Mirembrema'; }
 ?>
 <!DOCTYPE html>
 <html lang="sq">
@@ -160,177 +186,6 @@ if (!empty($_SESSION['flash_success'])) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/style.css">
-    <style>
-        /* ---------- Stats ---------- */
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-        .stat {
-            background: var(--surface);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 16px 18px;
-        }
-        .stat-num {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
-            line-height: 1.1;
-            color: var(--text);
-        }
-        .stat-label {
-            margin-top: 4px;
-            font-size: 12px;
-            letter-spacing: 0.04em;
-            color: var(--text-dim);
-        }
-        .stat.is-danger .stat-num { color: var(--red); }
-        .stat.is-good .stat-num   { color: var(--green); }
-
-        .progress-wrap {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 28px;
-            font-size: 12px;
-            color: var(--text-dim);
-        }
-        .progress {
-            flex: 1;
-            height: 6px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.07);
-            overflow: hidden;
-        }
-        .progress > span {
-            display: block;
-            height: 100%;
-            border-radius: 999px;
-            background: linear-gradient(90deg, var(--accent), var(--accent-2));
-            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .progress-wrap strong { color: var(--text-soft); font-weight: 600; }
-
-        /* ---------- Toolbar / filters ---------- */
-        .dash-toolbar {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            margin-bottom: 24px;
-        }
-        .toolbar-row {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-        }
-        .toolbar-label {
-            min-width: 74px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--text-dim);
-        }
-        .dash-toolbar .filters { margin-bottom: 0; }
-        .filters a .n {
-            margin-left: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            opacity: 0.6;
-        }
-
-        .cat-filters {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        a.cat-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 7px 14px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-soft);
-            background: var(--surface);
-            border: 1px solid var(--border);
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-        a.cat-pill .dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: var(--cat, var(--text-dim));
-            flex-shrink: 0;
-        }
-        a.cat-pill .n {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-dim);
-        }
-        a.cat-pill:hover {
-            background: var(--surface-2);
-            border-color: var(--border-hi);
-            color: var(--text);
-        }
-        a.cat-pill.active {
-            color: var(--text);
-            background: color-mix(in srgb, var(--cat, var(--accent)) 20%, transparent);
-            border-color: color-mix(in srgb, var(--cat, var(--accent)) 60%, transparent);
-        }
-        a.cat-pill.active .dot { box-shadow: 0 0 10px var(--cat, var(--accent)); }
-
-        .clear-filters {
-            font-size: 12px;
-            color: var(--text-dim);
-            margin-left: auto;
-        }
-        .clear-filters:hover { color: var(--accent-2); }
-
-        /* ---------- Task extras ---------- */
-        a.task-cat {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 2px 10px 2px 8px;
-            border-radius: 999px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text);
-            background: color-mix(in srgb, var(--cat) 18%, transparent);
-            border: 1px solid color-mix(in srgb, var(--cat) 50%, transparent);
-            transition: background 0.2s;
-        }
-        a.task-cat:hover {
-            background: color-mix(in srgb, var(--cat) 30%, transparent);
-            color: var(--text);
-        }
-        a.task-cat .dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--cat);
-        }
-        .task-meta .today {
-            color: var(--yellow);
-            font-weight: 600;
-        }
-
-        @media (max-width: 700px) {
-            .stats { grid-template-columns: repeat(2, 1fr); }
-            .toolbar-label { min-width: 100%; }
-            .clear-filters { margin-left: 0; }
-            .dash-toolbar .filters { max-width: 100%; overflow-x: auto; }
-        }
-    </style>
 </head>
 <body>
 <?php require_once __DIR__ . '/includes/navbar.php'; ?>
@@ -338,12 +193,19 @@ if (!empty($_SESSION['flash_success'])) {
 <main class="dashboard">
 
     <div class="dashboard-header">
-        <h1>Detyrat e mia</h1>
-        <a href="tasks/add_task.php" class="btn">+ Shto detyrë</a>
+        <div>
+            <p class="eyebrow"><?= e($greet) ?>, <?= e($username) ?></p>
+            <h1>Detyrat e mia</h1>
+        </div>
+        <a href="tasks/add_task.php" class="btn">+ Shto detyre</a>
     </div>
 
     <?php if ($flash): ?>
         <div class="alert success"><p><?= e($flash) ?></p></div>
+    <?php endif; ?>
+
+    <?php if ($flash_error): ?>
+        <div class="alert error"><p><?= e($flash_error) ?></p></div>
     <?php endif; ?>
 
     <?php if ($stats['total'] > 0): ?>
@@ -358,11 +220,11 @@ if (!empty($_SESSION['flash_success'])) {
             </div>
             <div class="stat <?= $stats['completed'] > 0 ? 'is-good' : '' ?>">
                 <div class="stat-num"><?= $stats['completed'] ?></div>
-                <div class="stat-label">Të kryera</div>
+                <div class="stat-label">Te kryera</div>
             </div>
             <div class="stat <?= $stats['overdue'] > 0 ? 'is-danger' : '' ?>">
                 <div class="stat-num"><?= $stats['overdue'] ?></div>
-                <div class="stat-label">Të vonuara</div>
+                <div class="stat-label">Te vonuara</div>
             </div>
         </div>
         <div class="progress-wrap">
@@ -372,16 +234,24 @@ if (!empty($_SESSION['flash_success'])) {
     <?php endif; ?>
 
     <div class="dash-toolbar">
+
+        <form method="GET" action="dashboard.php" class="search-row">
+            <?php if ($filter !== 'all'): ?><input type="hidden" name="filter" value="<?= e($filter) ?>"><?php endif; ?>
+            <?php if ($cat_filter !== 'all'): ?><input type="hidden" name="cat" value="<?= e($cat_filter) ?>"><?php endif; ?>
+            <input type="text" name="q" class="search-input" maxlength="100"
+                   placeholder="Kerko nje detyre..." value="<?= e($q) ?>">
+        </form>
+
         <div class="toolbar-row">
             <span class="toolbar-label">Statusi</span>
             <div class="filters">
-                <a href="<?= e(dash_url('all', $cat_filter)) ?>"       class="<?= $filter === 'all'       ? 'active' : '' ?>">Te gjitha<span class="n"><?= $stats['total'] ?></span></a>
-                <a href="<?= e(dash_url('active', $cat_filter)) ?>"    class="<?= $filter === 'active'    ? 'active' : '' ?>">Aktive<span class="n"><?= $stats['active'] ?></span></a>
-                <a href="<?= e(dash_url('completed', $cat_filter)) ?>" class="<?= $filter === 'completed' ? 'active' : '' ?>">Te kryera<span class="n"><?= $stats['completed'] ?></span></a>
+                <a href="<?= e(dash_url('all', $cat_filter, $q)) ?>"       class="<?= $filter === 'all'       ? 'active' : '' ?>">Te gjitha<span class="n"><?= $stats['total'] ?></span></a>
+                <a href="<?= e(dash_url('active', $cat_filter, $q)) ?>"    class="<?= $filter === 'active'    ? 'active' : '' ?>">Aktive<span class="n"><?= $stats['active'] ?></span></a>
+                <a href="<?= e(dash_url('completed', $cat_filter, $q)) ?>" class="<?= $filter === 'completed' ? 'active' : '' ?>">Te kryera<span class="n"><?= $stats['completed'] ?></span></a>
             </div>
 
             <?php if ($filters_active): ?>
-                <a href="dashboard.php" class="clear-filters">✕ Pastro filtrat</a>
+                <a href="dashboard.php" class="clear-filters">&#10005; Pastro filtrat</a>
             <?php endif; ?>
         </div>
 
@@ -389,11 +259,11 @@ if (!empty($_SESSION['flash_success'])) {
             <div class="toolbar-row">
                 <span class="toolbar-label">Kategoria</span>
                 <div class="cat-filters">
-                    <a href="<?= e(dash_url($filter, 'all')) ?>"
+                    <a href="<?= e(dash_url($filter, 'all', $q)) ?>"
                        class="cat-pill <?= $cat_filter === 'all' ? 'active' : '' ?>">Te gjitha</a>
 
                     <?php foreach ($categories as $cid => $cat): ?>
-                        <a href="<?= e(dash_url($filter, (string)$cid)) ?>"
+                        <a href="<?= e(dash_url($filter, (string)$cid, $q)) ?>"
                            class="cat-pill <?= $cat_filter === (string)$cid ? 'active' : '' ?>"
                            style="--cat: <?= e($cat['color']) ?>;">
                             <span class="dot"></span>
@@ -403,7 +273,7 @@ if (!empty($_SESSION['flash_success'])) {
                     <?php endforeach; ?>
 
                     <?php if ($count_none > 0 || $cat_filter === 'none'): ?>
-                        <a href="<?= e(dash_url($filter, 'none')) ?>"
+                        <a href="<?= e(dash_url($filter, 'none', $q)) ?>"
                            class="cat-pill <?= $cat_filter === 'none' ? 'active' : '' ?>">
                             <span class="dot"></span>
                             Pa kategori
@@ -417,10 +287,13 @@ if (!empty($_SESSION['flash_success'])) {
 
     <?php if (empty($tasks)): ?>
         <div class="empty-state">
-            <p>📭 Nuk ka detyra per kete filter.</p>
             <?php if ($filters_active): ?>
+                <p class="empty-icon">&#128269;</p>
+                <p>Asnje detyre nuk perputhet me filtrat.</p>
                 <p><a href="dashboard.php">Pastro filtrat</a></p>
             <?php else: ?>
+                <p class="empty-icon">&#128237;</p>
+                <p>Nuk ke asnje detyre ende.</p>
                 <p><a href="tasks/add_task.php">Shto detyren e pare</a></p>
             <?php endif; ?>
         </div>
@@ -450,7 +323,7 @@ if (!empty($_SESSION['flash_success'])) {
                         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
                         <input type="hidden" name="id"   value="<?= (int)$task['id'] ?>">
                         <button type="submit" class="check-btn" title="Ndrysho statusin">
-                            <?= $isDone ? '✓' : '' ?>
+                            <?= $isDone ? '&#10003;' : '' ?>
                         </button>
                     </form>
 
@@ -461,7 +334,7 @@ if (!empty($_SESSION['flash_success'])) {
                                 <?= e($prioLabel) ?>
                             </span>
                             <?php if ($taskCat): ?>
-                                <a href="<?= e(dash_url($filter, (string)$taskCat['id'])) ?>"
+                                <a href="<?= e(dash_url($filter, (string)$taskCat['id'], $q)) ?>"
                                    class="task-cat"
                                    style="--cat: <?= e($taskCat['color']) ?>;"
                                    title="Shfaq vetem kete kategori">
@@ -477,22 +350,22 @@ if (!empty($_SESSION['flash_success'])) {
                         <div class="task-meta">
                             <?php if (!empty($task['due_date'])): ?>
                                 <span class="<?= $isOverdue ? 'overdue' : ($isToday ? 'today' : '') ?>">
-                                    📅 <?= e(date('d.m.Y', strtotime($task['due_date']))) ?>
+                                    &#128197; <?= e(date('d.m.Y', strtotime($task['due_date']))) ?>
                                     <?= $isOverdue ? ' (vonuar)' : ($isToday ? ' (sot)' : '') ?>
                                 </span>
                             <?php endif; ?>
-                            <span>🕒 <?= e($task['created_at']) ?></span>
+                            <span>&#128338; <?= e(date('d.m.Y H:i', strtotime($task['created_at']))) ?></span>
                         </div>
                     </div>
 
                     <div class="task-actions">
-                        <a href="tasks/edit_task.php?id=<?= (int)$task['id'] ?>" class="icon-btn" title="Edito">✏️</a>
+                        <a href="tasks/edit_task.php?id=<?= (int)$task['id'] ?>" class="icon-btn" title="Edito">&#9999;&#65039;</a>
 
                         <form action="tasks/delete_task.php" method="POST" class="inline-form"
                               onsubmit="return confirm('Fshij kete detyre?');">
                             <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
                             <input type="hidden" name="id"   value="<?= (int)$task['id'] ?>">
-                            <button type="submit" class="icon-btn" title="Fshij">🗑️</button>
+                            <button type="submit" class="icon-btn" title="Fshij">&#128465;&#65039;</button>
                         </form>
                     </div>
 
@@ -502,6 +375,7 @@ if (!empty($_SESSION['flash_success'])) {
     <?php endif; ?>
 
 </main>
+
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
 </body>
 </html>

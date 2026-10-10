@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // CSRF
 if (!verify_csrf($_POST['csrf'] ?? '')) {
-    $_SESSION['flash_success'] = 'Kerkese e pavlefshme. Provo perseri.';
+    $_SESSION['flash_error'] = 'Kerkese e pavlefshme. Provo perseri.';
     redirect('../dashboard.php');
 }
 
@@ -40,6 +40,7 @@ try {
 
 } catch (mysqli_sql_exception $e) {
     error_log("Toggle task error: " . $e->getMessage());
+    $_SESSION['flash_error'] = 'Diqka shkoi gabim. Provo perseri.';
 }
 
 redirect('../dashboard.php');

@@ -17,7 +17,7 @@ $old = [
     'category_id' => '',
 ];
 
-// Load user's categories
+// Ngarko kategorite e userit
 $categories = [];
 try {
     $stmt = $conn->prepare(
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!in_array($old['priority'], ['low', 'medium', 'high'], true)) {
-            $errors[] = 'Prioritet i pavlefshëm.';
+            $errors[] = 'Prioritet i pavlefshem.';
         }
 
         if ($old['due_date'] !== '') {
@@ -63,10 +63,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Kategoria duhet te jete e userit aktual (jo e dikujt tjeter)
+        $category_id = !empty($old['category_id']) ? (int)$old['category_id'] : null;
+        if ($category_id !== null && !in_array($category_id, array_map('intval', array_column($categories, 'id')), true)) {
+            $errors[] = 'Kategori e pavlefshme.';
+        }
+
         if (empty($errors)) {
             try {
                 $due = $old['due_date'] === '' ? null : $old['due_date'];
-                $category_id = !empty($old['category_id']) ? (int)$old['category_id'] : null;
 
                 $stmt = $conn->prepare(
                     "INSERT INTO tasks (user_id, title, description, priority, due_date, category_id)
@@ -98,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sq">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -109,16 +114,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-<!--<nav class="navbar">
-    <a href="../dashboard.php" class="logo">To-Do List</a>
-    <div class="nav-links">
-        <a href="../dashboard.php" class="btn-outline">← Kthehu</a>
-    </div>
-</nav> -->
 <?php require_once __DIR__ . '/../includes/navbar.php'; ?>
 
-<main class="dashboard page-center">
+<main class="page-center">
     <div class="page-header">
+        <p class="eyebrow">Detyre e re</p>
         <h1>Shto detyre te re</h1>
     </div>
 
@@ -133,28 +133,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="POST" class="task-form">
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
 
-        <label>Titulli *</label>
+        <label>Titulli * <span class="counter" id="titleCount"></span></label>
         <input type="text" name="title" maxlength="255"
                value="<?= e($old['title']) ?>" required autofocus>
 
         <label>Pershkrimi (opsional)</label>
         <textarea name="description" rows="4"><?= e($old['description']) ?></textarea>
 
-        <label>Prioriteti</label>
-        <select name="priority">
-            <option value="low"    <?= $old['priority'] === 'low'    ? 'selected' : '' ?>>Low</option>
-            <option value="medium" <?= $old['priority'] === 'medium' ? 'selected' : '' ?>>Medium</option>
-            <option value="high"   <?= $old['priority'] === 'high'   ? 'selected' : '' ?>>High</option>
-        </select>
-
-        <label>Data (opsionale)</label>
-        <input type="date" name="due_date" value="<?= e($old['due_date']) ?>">
+        <div class="form-row">
+            <div>
+                <label>Prioriteti</label>
+                <select name="priority">
+                    <option value="low"    <?= $old['priority'] === 'low'    ? 'selected' : '' ?>>Low</option>
+                    <option value="medium" <?= $old['priority'] === 'medium' ? 'selected' : '' ?>>Medium</option>
+                    <option value="high"   <?= $old['priority'] === 'high'   ? 'selected' : '' ?>>High</option>
+                </select>
+            </div>
+            <div>
+                <label>Data (opsionale)</label>
+                <input type="date" name="due_date" value="<?= e($old['due_date']) ?>">
+            </div>
+        </div>
 
         <label>Kategoria</label>
         <select name="category_id">
             <option value="">-- Pa kategori --</option>
             <?php foreach ($categories as $cat): ?>
-                <option value="<?= (int)$cat['id'] ?>" <?= $old['category_id'] == $cat['id'] ? 'selected' : '' ?>>
+                <option value="<?= (int)$cat['id'] ?>" <?= (string)$old['category_id'] === (string)$cat['id'] ? 'selected' : '' ?>>
                     <?= e($cat['name']) ?>
                 </option>
             <?php endforeach; ?>
@@ -166,6 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </form>
 </main>
+
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
 </body>
 </html>

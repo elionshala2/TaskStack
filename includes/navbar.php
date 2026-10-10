@@ -1,4 +1,6 @@
 <?php
+// includes/navbar.php
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -6,8 +8,12 @@ $isLoggedIn = !empty($_SESSION['user_id']);
 $username   = $_SESSION['username'] ?? '';
 $current    = basename($_SERVER['PHP_SELF']);
 
+// nese jemi brenda folderit /tasks duhet ../ per linqet
 $inTasks = str_contains($_SERVER['PHP_SELF'], '/tasks/');
-$prefix = $inTasks ? '../' : '';
+$prefix  = $inTasks ? '../' : '';
+
+$cat_pages  = ['categories.php', 'add_category.php', 'edit_category.php'];
+$task_pages = ['dashboard.php', 'add_task.php', 'edit_task.php'];
 ?>
 <nav class="navbar">
     <div class="nav-left">
@@ -19,12 +25,10 @@ $prefix = $inTasks ? '../' : '';
 
             <?php if ($isLoggedIn): ?>
                 <a href="<?= $prefix ?>dashboard.php"
-                   class="btn-outline <?= $current === 'dashboard.php' ? 'btn-active' : '' ?>">Dashboard</a>
+                   class="btn-outline <?= in_array($current, $task_pages) ? 'btn-active' : '' ?>">Dashboard</a>
 
                 <a href="<?= $prefix ?>categories.php"
-                   class="btn-outline <?= in_array($current, ['categories.php','add_category.php']) ? 'btn-active' : '' ?>">
-                    Kategorite
-                </a>
+                   class="btn-outline <?= in_array($current, $cat_pages) ? 'btn-active' : '' ?>">Kategorite</a>
             <?php endif; ?>
         </div>
     </div>

@@ -1,4 +1,6 @@
 <?php
+// signup.php
+
 require_once __DIR__ . '/config.php'; // __DIR__ eshte folderi prind i ketij file
 require_once __DIR__ . '/includes/functions.php';
 
@@ -10,7 +12,7 @@ if (!empty($_SESSION['user_id'])) {
 }
 
 $errors = []; // per grumbullim te erroreve
-$old = ['username' => '', 'email' => '']; // ne menyre qe nese ka errore, vlerat e formes nuk fshihen
+$old = ['username' => '', 'email' => '']; // qe vlerat e formes mos te fshihen nese ka errore
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -33,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Email i pavlefshëm.';
+            $errors[] = 'Email i pavlefshem.';
         }
 
         if (strlen($password) < 8
@@ -56,9 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->bind_param("ss", $email, $username);
                 $stmt->execute();
                 $stmt->store_result();
+                $exists = $stmt->num_rows > 0;
+                $stmt->close();
 
-                if ($stmt->num_rows > 0) {
-                    $errors[] = 'Ky email ose username është regjistruar më parë.';
+                if ($exists) {
+                    $errors[] = 'Ky email ose username eshte regjistruar me pare.';
                 } else {
                     $hash = password_hash($password, PASSWORD_DEFAULT);
 
@@ -67,23 +71,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
                     $stmt->bind_param("sss", $username, $email, $hash);
                     $stmt->execute();
-                    
-                    // Get the new user ID
+                    $stmt->close();
+
+                    // ID e userit te ri
                     $new_user_id = $conn->insert_id;
-                    
-                    // Create default Inbox category
+
+                    // Krijo kategorine default Inbox
                     ensure_default_category($conn, $new_user_id);
 
-                    $_SESSION['flash_success'] = 'Llogaria u krijua me sukses! Tani mund te hyni.';
+                    $_SESSION['flash_success'] = 'Llogaria u krijua me sukses! Tani mund te hysh.';
                     redirect('login.php');
                 }
-                $stmt->close();
 
             } catch (mysqli_sql_exception $e) {
                 error_log("Signup error: " . $e->getMessage());
 
                 // Nese eshte dublikat trajtoje
-                if ($e->getCode() === 1062) {
+                if ((int)$e->getCode() === 1062) {
                     $errors[] = 'Ky email ose username ekziston tashme.';
                 } else {
                     $errors[] = 'Diqka shkoi gabim. Provo perseri.';
@@ -94,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sq">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -105,16 +109,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-   <!-- <nav class="navbar">
-    <a href="index.php" class="logo">To-Do List</a>
-    <div class="nav-links">
-        <a href="index.php" class="btn-outline">← Kthehu</a>
-        <a href="login.php" class="btn">Login</a>
-    </div>
-</nav> -->
 <?php require_once __DIR__ . '/includes/navbar.php'; ?>
+
 <div class="auth-box">
     <h1>Signup</h1>
+    <p class="auth-sub">Krijo llogarine dhe fillo te organizohesh sot.</p>
 
     <?php if (!empty($errors)): ?>
         <div class="alert error">
@@ -129,25 +128,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <label>Username</label>
         <input type="text" name="username" maxlength="20"
-               value="<?= e($old['username']) ?>" required>
+               value="<?= e($old['username']) ?>" autocomplete="username" required>
 
         <label>Email</label>
         <input type="email" name="email"
-               value="<?= e($old['email']) ?>" required>
+               value="<?= e($old['email']) ?>" autocomplete="email" required>
 
         <label>Password</label>
-        <input type="password" name="password" id="password" required>
+        <input type="password" name="password" id="password" autocomplete="new-password" required>
+        <div class="strength"><span id="strengthBar"></span></div>
+        <small class="hint" id="pwHint">Min 8 karaktere, shkronje dhe numer.</small>
 
         <label>Confirm Password</label>
-        <input type="password" name="cpassword" id="cpassword" required>
+        <input type="password" name="cpassword" id="cpassword" autocomplete="new-password" required>
+        <small class="hint" id="matchHint"></small>
 
         <button type="submit">Regjistrohu</button>
     </form>
 
     <p>Ke llogari? <a href="login.php">Login</a></p>
-    <p><a href="index.php">← Kthehu ne faqen kryesore</a></p>
+    <p><a href="index.php">&larr; Kthehu ne faqen kryesore</a></p>
 </div>
-<script src="assets/script.js"></script>
+
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
 </body>
 </html>
