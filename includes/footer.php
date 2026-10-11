@@ -10,7 +10,7 @@ $f_loggedIn  = !empty($_SESSION['user_id']); // shikon neser perdoruesi eshte i 
 <footer class="site-footer">
     <div class="footer-inner">
         <div class="footer-brand">
-            <a href="<?= $f_prefix ?>index.php" class="logo">To-Do List</a>
+            <a href="<?= $f_prefix ?>index.php" class="logo">TaskStack</a>
             <p>Organizohu. Fokusohu. Arri me shume.</p>
         </div>
 
@@ -27,7 +27,7 @@ $f_loggedIn  = !empty($_SESSION['user_id']); // shikon neser perdoruesi eshte i 
         </div>
 
         <div class="footer-copy">
-            &copy; <?= date('Y') ?> To-Do List. Te gjitha te drejtat e rezervuara. <!--perdor php per vitin-->
+            &copy; <?= date('Y') ?> TaskStack. Te gjitha te drejtat e rezervuara. <!--perdor php per vitin-->
             Elion Shala
         </div>
     </div>

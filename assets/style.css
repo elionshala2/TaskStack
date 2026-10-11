@@ -1,5 +1,5 @@
 /* =========================================================
-   To-Do List - Elion Shala :)
+   TaskStack - Elion Shala :)
    ========================================================= */
 
 :root {
@@ -389,48 +389,47 @@ select option {
    ALERTS
    ========================================================= */
 .alert {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    column-gap: 12px;
-    padding: 14px 18px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    line-height: 1.5;
-    border: 1px solid;
-    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    padding: 14px 18px !important;
+    border-radius: 10px !important;
+    margin-bottom: 20px !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    border: 1px solid !important;
+    text-align: left !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
 .alert::before {
-    grid-column: 1;
-    grid-row: 1 / span 10;
-    align-self: start;
-    font-size: 16px;
-    line-height: 1.4;
-    font-weight: 700;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
 }
 
 .alert p {
-    grid-column: 2;
-    margin: 0 0 4px;
-    color: inherit;
+    margin: 0 !important;
+    color: inherit !important;
+    text-align: left !important;
 }
-.alert p:last-child { margin-bottom: 0; }
 
 .alert.error {
-    background: rgba(239, 68, 68, 0.08);
-    border-color: rgba(239, 68, 68, 0.35);
-    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.1) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    color: #fca5a5 !important;
 }
-.alert.error::before { content: '!'; color: #f87171; }
+.alert.error::before { content: '!' !important; color: #f87171 !important; }
 
 .alert.success {
-    background: rgba(34, 197, 94, 0.08);
-    border-color: rgba(34, 197, 94, 0.35);
-    color: #86efac;
+    background: rgba(34, 197, 94, 0.1) !important;
+    border-color: rgba(34, 197, 94, 0.3) !important;
+    color: #86efac !important;
 }
+.alert.success::before { content: '\2713' !important; color: #4ade80 !important; }
 .alert.success::before { content: '\2713'; color: #4ade80; }
-
 /* =========================================================
    AUTH PAGES (login / signup)
    ========================================================= */
@@ -1663,4 +1662,34 @@ a.task-cat .dot {
 
 .auth-divider span {
     padding: 0 10px;
+}
+/* Reduce spacing between logo image and text */
+.logo {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important; /* Tighter spacing */
+    text-decoration: none !important;
+}
+
+/* Force logo image size */
+.navbar-logo-img {
+    height: 28px !important;
+    width: auto !important;
+    object-fit: contain !important;
+}
+
+/* Forcefully remove the rogue blue dot and any stray markers */
+.navbar span:first-child:not(.logo span),
+.nav-left > span:first-child,
+.navbar::before,
+.navbar::after,
+.nav-left::before,
+.nav-left::after {
+    display: none !important;
+    content: none !important;
+}
+
+.logo::before {
+    display: none !important;
+    content: none !important;
 }

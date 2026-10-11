@@ -17,7 +17,10 @@ $task_pages = ['dashboard.php', 'add_task.php', 'edit_task.php']; // faqet e tas
 ?>
 <nav class="navbar">
     <div class="nav-left">
-        <a href="<?= $prefix ?>index.php" class="logo">To-Do List</a>
+    <a href="<?= $prefix ?>index.php" class="logo">
+        <img src="<?= $prefix ?>assets/logo.png" alt="TaskStack Logo" class="navbar-logo-img" style="height: 32px; width: auto; object-fit: contain; display: block;">
+        <span>TaskStack</span>
+    </a>
 
         <div class="nav-main">
             <a href="<?= $prefix ?>index.php"

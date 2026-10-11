@@ -14,8 +14,8 @@ $username   = $_SESSION['username'] ?? ''; // ruan username nese useri eshte i k
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="To-Do List - Organizohu, fokusohu, arri me shume.">
-    <title>To-Do List - Organizohu me lehtesi</title>
+    <meta name="description" content="TaskStack - Organizohu, fokusohu, arri me shume.">
+    <title>TaskStack - Organizohu me lehtesi</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

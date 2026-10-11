@@ -52,18 +52,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Kontroll dublikat + insert
         if (empty($errors)) {
             try {
-                // Kontroll email ose username ekzistues
-                $stmt = $conn->prepare(
-                    "SELECT id FROM regjistrimi WHERE email = ? OR username = ? LIMIT 1"
-                );
-                $stmt->bind_param("ss", $email, $username);
+                // 1. Kontrollo a ekziston vetem username-i
+                $stmt = $conn->prepare("SELECT id FROM regjistrimi WHERE username = ? LIMIT 1");
+                $stmt->bind_param("s", $username);
                 $stmt->execute();
                 $stmt->store_result();
-                $exists = $stmt->num_rows > 0;
+                $username_exists = $stmt->num_rows > 0;
                 $stmt->close();
 
-                if ($exists) {
-                    $errors[] = 'Ky email ose username eshte regjistruar me pare.';
+                // 2. Kontrollo a ekziston vetem email-i
+                $stmt = $conn->prepare("SELECT id FROM regjistrimi WHERE email = ? LIMIT 1");
+                $stmt->bind_param("s", $email);
+                $stmt->execute();
+                $stmt->store_result();
+                $email_exists = $stmt->num_rows > 0;
+                $stmt->close();
+
+                // 3. Shfaq gabimin specifik sipas rastit
+                if ($username_exists && $email_exists) {
+                    $errors[] = 'Email dhe username (te dyja) ekzistojne! Ju lutem zgjidhni nje tjeter kombinim ose provoni te kyqeni.';
+                } elseif ($username_exists) {
+                    $errors[] = 'Ky username ekziston!  Ju lutem zgjidhni nje tjeter ose provoni te kyqeni.';
+                } elseif ($email_exists) {
+                    $errors[] = 'Ky email ekziston! Zgjedh nje tjeter ose provoni te kyqeni.';
                 } else {
                     $hash = password_hash($password, PASSWORD_DEFAULT);
 
@@ -98,6 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="sq">
 <head>
