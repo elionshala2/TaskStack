@@ -75,7 +75,7 @@ function google_make_username(mysqli $conn, string $name, string $email): string
 
 // Nese tashme i kyqur
 if (!empty($_SESSION['user_id'])) {
-    redirect('dashboard.php');
+    redirect('index.php');
     exit;
 }
 
@@ -194,7 +194,7 @@ try {
     $_SESSION['user_id']  = $user['id'];
     $_SESSION['username'] = $user['username'];
 
-    redirect('dashboard.php');
+    redirect('index.php');
     exit;
 
 } catch (mysqli_sql_exception $e) {

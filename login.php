@@ -8,7 +8,7 @@ session_start(); // startohet sessioni per te ruajtur user_id dhe tokenin CSRF
 
 // Nese tashme i kyqur shkon ne dashboard
 if (!empty($_SESSION['user_id'])) {
-    redirect('dashboard.php'); // redirect ne dashboard nese useri eshte i kyqur
+    redirect('index.php'); // redirect ne dashboard nese useri eshte i kyqur
 }
 
 $errors  = []; // array per te ruajtur gabimet
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['username'] = $user['username'];
 
                     // Shko ne dashboard
-                    redirect('dashboard.php');
+                    redirect('index.php');
 
                 } else {
                     // Numro tentativen e gabuar
