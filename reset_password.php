@@ -42,6 +42,13 @@ if ($valid && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $uid  = (int)$row['user_id'];
                 $hash = password_hash($password, PASSWORD_DEFAULT);
 
+                // ruaj te dhenat e vjetra (per linkun "anulo ndryshimin" ne email)
+                $stmt = $conn->prepare("SELECT username, email, password, provider FROM regjistrimi WHERE id = ? LIMIT 1");
+                $stmt->bind_param("i", $uid);
+                $stmt->execute();
+                $prev = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+
                 // provider = 'local' (si ne settings.php); email_verified = 1 sepse useri e provoi qe e zoteron emailin
                 $stmt = $conn->prepare(
                     "UPDATE regjistrimi SET password = ?, provider = 'local', email_verified = 1 WHERE id = ?"
@@ -56,6 +63,11 @@ if ($valid && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->bind_param("i", $uid);
                 $stmt->execute();
                 $stmt->close();
+
+                // njofto emailin e llogarise, me link per ta anuluar ndryshimin (12 ore)
+                if ($prev) {
+                    send_password_changed_notice($conn, $uid, $prev['email'], $prev['username'], $prev['password'], $prev['provider'] ?: 'local');
+                }
 
                 $_SESSION['flash_success'] = 'Passwordi u ndryshua me sukses! Tani mund te kyqesh.';
                 redirect('login.php');

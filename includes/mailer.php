@@ -9,6 +9,8 @@ use PHPMailer\PHPMailer\PHPMailer;
 
 define('VERIFY_TTL_MINUTES', 1440);   // linku i verifikimit vlen 24 ore
 define('RESET_TTL_MINUTES', 60);      // linku i reset password vlen 1 ore
+define('EMAIL_CHANGE_TTL_MINUTES', 60); // linku per konfirmimin e emailit te ri vlen 1 ore
+define('REVERT_TTL_MINUTES', 720);    // linku "anulo ndryshimin" vlen 12 ore
 define('MAIL_COOLDOWN_SECONDS', 60);  // sa pritet para se te dergohet email i ri per te njejtin user
 define('MAX_MAIL_REQUESTS', 5);       // max kerkesa per IP ...
 define('MAIL_WINDOW_MINUTES', 15);    // ... brenda ketyre minutave
@@ -58,29 +60,47 @@ function send_mail(string $to, string $subject, string $html, string $text): boo
 // Tokenat (ne DB ruhet vetem hash-i SHA-256, jo tokeni vete)
 // ---------------------------------------------------------------
 
-// Krijon token te ri dhe i ben te pavlefshem te vjetrit e pa-perdorur te se njejtit lloj
-function create_email_token($conn, int $user_id, string $type): string {
-    $token   = bin2hex(random_bytes(32));
-    $hash    = hash('sha256', $token);
-    $minutes = ($type === 'verify') ? VERIFY_TTL_MINUTES : RESET_TTL_MINUTES;
+// Sa minuta vlen secili lloj tokeni
+function token_ttl_minutes(string $type): int {
+    switch ($type) {
+        case 'verify':          return VERIFY_TTL_MINUTES;
+        case 'reset':           return RESET_TTL_MINUTES;
+        case 'email_change':    return EMAIL_CHANGE_TTL_MINUTES;
+        case 'revert_email':
+        case 'revert_password': return REVERT_TTL_MINUTES;
+    }
+    return 60;
+}
 
-    $stmt = $conn->prepare("UPDATE email_tokens SET used_at = NOW() WHERE user_id = ? AND type = ? AND used_at IS NULL");
+// I ben te pavlefshem te gjithe tokenat e pa-perdorur te nje lloji per nje user (dhe fshin payload-in)
+function invalidate_user_tokens($conn, int $user_id, string $type): void {
+    $stmt = $conn->prepare("UPDATE email_tokens SET used_at = NOW(), payload = NULL WHERE user_id = ? AND type = ? AND used_at IS NULL");
     $stmt->bind_param("is", $user_id, $type);
     $stmt->execute();
     $stmt->close();
+}
+
+// Krijon token te ri dhe i ben te pavlefshem te vjetrit e pa-perdorur te se njejtit lloj.
+// $payload = te dhena shtese (emaili i ri, emaili/password-i i vjeter per anulim)
+function create_email_token($conn, int $user_id, string $type, ?string $payload = null): string {
+    $token   = bin2hex(random_bytes(32));
+    $hash    = hash('sha256', $token);
+    $minutes = token_ttl_minutes($type);
+
+    invalidate_user_tokens($conn, $user_id, $type);
 
     $stmt = $conn->prepare(
-        "INSERT INTO email_tokens (user_id, type, token_hash, expires_at)
-         VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))"
+        "INSERT INTO email_tokens (user_id, type, token_hash, payload, expires_at)
+         VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))"
     );
-    $stmt->bind_param("issi", $user_id, $type, $hash, $minutes);
+    $stmt->bind_param("isssi", $user_id, $type, $hash, $payload, $minutes);
     $stmt->execute();
     $stmt->close();
 
     return $token;
 }
 
-// Gjen token te vlefshem (jo i perdorur, jo i skaduar). Kthen ['id'=>, 'user_id'=>] ose null
+// Gjen token te vlefshem (jo i perdorur, jo i skaduar). Kthen ['id'=>, 'user_id'=>, 'payload'=>] ose null
 function find_email_token($conn, string $token, string $type): ?array {
     if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
         return null;
@@ -88,7 +108,7 @@ function find_email_token($conn, string $token, string $type): ?array {
     $hash = hash('sha256', $token);
 
     $stmt = $conn->prepare(
-        "SELECT id, user_id FROM email_tokens
+        "SELECT id, user_id, payload FROM email_tokens
          WHERE token_hash = ? AND type = ? AND used_at IS NULL AND expires_at > NOW()
          LIMIT 1"
     );
@@ -101,7 +121,7 @@ function find_email_token($conn, string $token, string $type): ?array {
 }
 
 function mark_token_used($conn, int $token_id): void {
-    $stmt = $conn->prepare("UPDATE email_tokens SET used_at = NOW() WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE email_tokens SET used_at = NOW(), payload = NULL WHERE id = ?");
     $stmt->bind_param("i", $token_id);
     $stmt->execute();
     $stmt->close();
@@ -211,4 +231,80 @@ function send_reset_email($conn, int $user_id, string $email, string $username):
     $text = "$intro\n\n$link\n\n$note";
 
     return send_mail($email, 'Rivendos passwordin - TaskStack', $html, $text);
+}
+
+// ---------------------------------------------------------------
+// Ndryshimi i emailit + njoftimet "anulo ndryshimin"
+// ---------------------------------------------------------------
+
+// ab***@gmail.com
+function mask_email(string $email): string {
+    $parts = explode('@', $email, 2);
+    if (count($parts) !== 2) {
+        return $email;
+    }
+    return mb_substr($parts[0], 0, 1) . '***@' . $parts[1];
+}
+
+// Dergon linkun e konfirmimit ne emailin e RI (emaili nuk ndryshon para konfirmimit)
+function send_email_change_email($conn, int $user_id, string $new_email, string $username): bool {
+    try {
+        $token = create_email_token($conn, $user_id, 'email_change', $new_email);
+    } catch (mysqli_sql_exception $ex) {
+        error_log('Email change token error: ' . $ex->getMessage());
+        return false;
+    }
+
+    $link  = app_url() . '/confirm_email.php?token=' . $token;
+    $intro = "Pershendetje $username, kerkove ta ndryshosh emailin e llogarise TaskStack ne kete adrese. Kliko butonin per ta konfirmuar.";
+    $note  = 'Linku vlen 1 ore. Nese nuk e ke kerkuar ti kete, injoroje kete email, asgje nuk ndryshon.';
+
+    $html = email_template('Konfirmo emailin e ri', $intro, 'Konfirmo emailin', $link, $note);
+    $text = "$intro\n\n$link\n\n$note";
+
+    return send_mail($new_email, 'Konfirmo emailin e ri - TaskStack', $html, $text);
+}
+
+// Njoftim te emaili i VJETER pasi emaili u ndryshua; linku e kthen emailin mbrapsht (12 ore)
+function send_email_changed_notice($conn, int $user_id, string $old_email, string $new_email, string $username): bool {
+    try {
+        $token = create_email_token($conn, $user_id, 'revert_email', $old_email);
+    } catch (mysqli_sql_exception $ex) {
+        error_log('Revert email token error: ' . $ex->getMessage());
+        return false;
+    }
+
+    $link  = app_url() . '/revert.php?token=' . $token;
+    $when  = date('d.m.Y H:i');
+    $intro = "Pershendetje $username, me $when emaili i llogarise tende TaskStack u ndryshua nga kjo adrese ne " . mask_email($new_email) . ". "
+           . "Nese ke qene ti, nuk duhet te besh asgje. Nese NUK ke qene ti, kliko butonin per ta kthyer emailin e meparshem.";
+    $note  = 'Linku vlen 12 ore. Nese nuk e ke bere ti kete ndryshim, ndrysho edhe passwordin menjehere.';
+
+    $html = email_template('Emaili i llogarise u ndryshua', $intro, 'Anulo ndryshimin', $link, $note);
+    $text = "$intro\n\n$link\n\n$note";
+
+    return send_mail($old_email, 'Emaili i llogarise u ndryshua - TaskStack', $html, $text);
+}
+
+// Njoftim pas reset password; linku e kthen passwordin e meparshem (12 ore)
+function send_password_changed_notice($conn, int $user_id, string $email, string $username, string $old_hash, string $old_provider): bool {
+    $payload = json_encode(['hash' => $old_hash, 'provider' => $old_provider]);
+
+    try {
+        $token = create_email_token($conn, $user_id, 'revert_password', $payload);
+    } catch (mysqli_sql_exception $ex) {
+        error_log('Revert password token error: ' . $ex->getMessage());
+        return false;
+    }
+
+    $link  = app_url() . '/revert.php?token=' . $token;
+    $when  = date('d.m.Y H:i');
+    $intro = "Pershendetje $username, me $when passwordi i llogarise tende TaskStack u ndryshua permes \"Harrova passwordin\". "
+           . "Nese ke qene ti, nuk duhet te besh asgje. Nese NUK ke qene ti, kliko butonin per ta kthyer passwordin e meparshem.";
+    $note  = 'Linku vlen 12 ore. Nese nuk e ke bere ti kete ndryshim, ndrysho edhe passwordin e emailit tend.';
+
+    $html = email_template('Passwordi u ndryshua', $intro, 'Anulo ndryshimin', $link, $note);
+    $text = "$intro\n\n$link\n\n$note";
+
+    return send_mail($email, 'Passwordi u ndryshua - TaskStack', $html, $text);
 }

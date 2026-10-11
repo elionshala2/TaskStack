@@ -4,6 +4,7 @@
 
 require_once __DIR__ . '/config.php'; // lidhja me databazen
 require_once __DIR__ . '/includes/functions.php'; // funksionet e pergjithshme
+require_once __DIR__ . '/includes/mailer.php'; // emailet (ndryshimi i emailit)
 
 session_start(); // fillohet sessioni per te ruajtur user_id dhe tokenin CSRF
 require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne login.php
@@ -11,7 +12,7 @@ require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne logi
 $user_id = (int)$_SESSION['user_id']; // merr user_id nga sessioni
 
 // gabimet ndahen sipas seksionit, qe cdo karte te shfaqe vetem gabimet e veta
-$errors = ['general' => [], 'username' => [], 'password' => [], 'google' => [], 'delete' => []];
+$errors = ['general' => [], 'username' => [], 'email' => [], 'password' => [], 'google' => [], 'delete' => []];
 
 // Ngarkon te dhenat e userit nga databaza
 function load_user(mysqli $conn, int $user_id): ?array
@@ -69,6 +70,7 @@ if (!$user) {
 // Llogari vetem me Google = passwordi eshte i rastesishem, useri nuk e di
 $is_google_only = ($user['provider'] ?? 'local') === 'google';
 $old_username   = $user['username'];
+$old_new_email  = ''; // qe emaili i shkruar mos te fshihet nese ka gabim
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -120,6 +122,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $errors['username'][] = 'Diqka shkoi gabim. Provo perseri.';
                 }
+            }
+        }
+
+    // ---------- 1b. Ndrysho emailin (konfirmohet me link ne emailin e ri) ----------
+    } elseif ($action === 'email') {
+
+        $new_email     = trim($_POST['new_email'] ?? '');
+        $old_new_email = $new_email;
+
+        if ($is_google_only) {
+            $errors['email'][] = 'Vendos fillimisht nje password (seksioni me poshte) para se te ndryshosh emailin.';
+        } elseif (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
+            $errors['email'][] = 'Email i pavlefshem.';
+        } elseif (strcasecmp($new_email, $user['email']) === 0) {
+            $errors['email'][] = 'Ky eshte emaili yt aktual.';
+        } else {
+            $err = null;
+            if (!check_current_password($conn, $user, (string)($_POST['email_password'] ?? ''), $err)) {
+                $errors['email'][] = $err;
+            }
+        }
+
+        if (empty($errors['email'])) {
+            try {
+                $stmt = $conn->prepare("SELECT id FROM regjistrimi WHERE email = ? AND id <> ? LIMIT 1");
+                $stmt->bind_param("si", $new_email, $user_id);
+                $stmt->execute();
+                $stmt->store_result();
+                $taken = $stmt->num_rows > 0;
+                $stmt->close();
+
+                if ($taken) {
+                    $errors['email'][] = 'Ky email perdoret nga nje llogari tjeter.';
+                } elseif (recent_token_exists($conn, $user_id, 'email_change')) {
+                    $errors['email'][] = 'Sapo te dergova nje email. Prit rreth 1 minute para se te provosh perseri.';
+                } elseif (send_email_change_email($conn, $user_id, $new_email, $user['username'])) {
+                    $_SESSION['flash_success'] = 'Te dergova nje link konfirmimi ne ' . $new_email . '. Emaili nuk ndryshon derisa ta konfirmosh (linku vlen 1 ore).';
+                    redirect('settings.php');
+                } else {
+                    $errors['email'][] = 'Emaili nuk u dergua. Provo perseri.';
+                }
+            } catch (mysqli_sql_exception $e) {
+                error_log("Settings email error: " . $e->getMessage());
+                $errors['email'][] = 'Diqka shkoi gabim. Provo perseri.';
             }
         }
 
@@ -341,6 +387,40 @@ $has_google   = !empty($user['google_id']);
             <div class="form-actions">
                 <button type="submit" class="btn">Ruaj username</button>
             </div>
+        </form>
+
+        <!-- ================= EMAIL ================= -->
+        <form method="POST" class="settings-card" id="email-card" novalidate>
+            <input type="hidden" name="csrf"   value="<?= e(csrf_token()) ?>">
+            <input type="hidden" name="action" value="email">
+
+            <div class="settings-head">
+                <h2>Email</h2>
+                <p>Emaili aktual: <strong><?= e($user['email']) ?></strong>. Per ta ndryshuar, te dergojme nje link konfirmimi ne emailin e ri.</p>
+            </div>
+
+            <?php if (!empty($errors['email'])): ?>
+                <div class="alert error">
+                    <?php foreach ($errors['email'] as $err): ?><p><?= e($err) ?></p><?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($is_google_only): ?>
+                <small class="hint">Hyn me Google dhe nuk ke password. Vendos nje password ne seksionin me poshte per te mundesuar ndryshimin e emailit.</small>
+            <?php else: ?>
+                <label for="newEmailInput">Email i ri</label>
+                <input type="email" id="newEmailInput" name="new_email"
+                       value="<?= e($old_new_email) ?>" placeholder="name@example.com"
+                       autocomplete="email" required>
+
+                <label for="emailPasswordInput">Password aktual</label>
+                <input type="password" id="emailPasswordInput" name="email_password"
+                       placeholder="••••••••" autocomplete="current-password" required>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn">Dergo linkun e konfirmimit</button>
+                </div>
+            <?php endif; ?>
         </form>
 
         <!-- ================= PASSWORD ================= -->
