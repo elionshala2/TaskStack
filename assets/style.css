@@ -1648,7 +1648,6 @@ a.task-cat .dot {
     font-size: 14px;
 }
 
-
 /* =========================================================
    14b. SETTINGS (settings.php)
    ========================================================= */
@@ -1815,13 +1814,108 @@ a.task-cat .dot {
         inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
+/* ---------- Lidhja me Google ---------- */
+.connect-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 20px;
+    padding: 16px 18px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.connect-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.connect-logo {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-hi);
+    border-radius: 12px;
+}
+
+.connect-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.connect-status {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.connect-status.on {
+    font-weight: 600;
+    color: var(--green);
+}
+
+.connect-status.on::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 6px;
+    vertical-align: middle;
+    background: var(--green);
+    border-radius: 50%;
+}
+
+.connect-action {
+    margin: 0;
+}
+
+.connect-action .btn-google {
+    width: auto;
+    margin: 0;
+    padding: 10px 18px;
+    box-shadow: none;
+}
+
+.connect-note {
+    margin-top: 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-dim);
+}
+
+.connect-note strong {
+    font-weight: 600;
+    color: var(--text-soft);
+}
+
+.connect-unlink {
+    margin-top: 4px;
+}
+
+.settings-card button.btn-outline {
+    box-shadow: none;
+}
+
+@media (max-width: 600px) {
+    .connect-row { flex-wrap: wrap; }
+    .connect-action,
+    .connect-action .btn-google { width: 100%; }
+}
+
 @media (max-width: 600px) {
     .profile-card,
     .settings-card { padding: 24px 20px; }
     .profile-card  { gap: 16px; }
     .avatar        { width: 56px; height: 56px; font-size: 22px; }
 }
-
 
 /* =========================================================
    15. LANDING PAGE (index.php)

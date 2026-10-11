@@ -11,7 +11,7 @@ require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne logi
 $user_id = (int)$_SESSION['user_id']; // merr user_id nga sessioni
 
 // gabimet ndahen sipas seksionit, qe cdo karte te shfaqe vetem gabimet e veta
-$errors = ['general' => [], 'username' => [], 'password' => [], 'delete' => []];
+$errors = ['general' => [], 'username' => [], 'password' => [], 'google' => [], 'delete' => []];
 
 // Ngarkon te dhenat e userit nga databaza
 function load_user(mysqli $conn, int $user_id): ?array
@@ -170,7 +170,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-    // ---------- 3. Fshi llogarine ----------
+    // ---------- 3. Shkput Google ----------
+    } elseif ($action === 'unlink') {
+
+        if ($is_google_only || empty($user['google_id'])) {
+            // pa password, Google eshte e vetmja menyre per t'u kyqur
+            $errors['google'][] = 'Vendos fillimisht nje password para se te shkeputesh Google.';
+        } else {
+            $err = null;
+            if (!check_current_password($conn, $user, (string)($_POST['unlink_password'] ?? ''), $err)) {
+                $errors['google'][] = $err;
+            }
+        }
+
+        if (empty($errors['google'])) {
+            try {
+                $stmt = $conn->prepare("UPDATE regjistrimi SET google_id = NULL WHERE id = ?");
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
+                $stmt->close();
+
+                $_SESSION['flash_success'] = 'Google u shkeput nga llogaria.';
+                redirect('settings.php');
+
+            } catch (mysqli_sql_exception $e) {
+                error_log("Settings unlink error: " . $e->getMessage());
+                $errors['google'][] = 'Diqka shkoi gabim. Provo perseri.';
+            }
+        }
+
+    // ---------- 4. Fshi llogarine ----------
     } elseif ($action === 'delete') {
 
         if ($is_google_only) {
@@ -229,6 +258,12 @@ if (!empty($_SESSION['flash_success'])) {
     unset($_SESSION['flash_success']);
 }
 
+// gabim nga google-callback.php (lidhja me Google)
+if (!empty($_SESSION['flash_error'])) {
+    $errors['general'][] = $_SESSION['flash_error'];
+    unset($_SESSION['flash_error']);
+}
+
 // te dhenat per shfaqje
 $initial      = mb_strtoupper(mb_substr($user['username'], 0, 1));
 $member_since = date('d.m.Y', strtotime($user['created_at']));
@@ -243,7 +278,8 @@ $has_google   = !empty($user['google_id']);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/style.css?v=<?= (int)@filemtime(__DIR__ . '/assets/style.css') ?>">
+    <link rel="stylesheet" href="assets/settings.css?v=<?= (int)@filemtime(__DIR__ . '/assets/settings.css') ?>">
 </head>
 <body>
 <?php require_once __DIR__ . '/includes/navbar.php'; ?>
@@ -354,6 +390,67 @@ $has_google   = !empty($user['google_id']);
                 <button type="submit" class="btn"><?= $is_google_only ? 'Vendos password' : 'Ndrysho password' ?></button>
             </div>
         </form>
+
+        <!-- ================= KYQJA ME GOOGLE ================= -->
+        <section class="settings-card" id="google">
+            <div class="settings-head">
+                <h2>Kyqja me Google</h2>
+                <p>Lidh Google per t'u kyqur me nje klik, ose vazhdo me email dhe password. Te dyja menyrat hyjne ne te njejten llogari.</p>
+            </div>
+
+            <?php if (!empty($errors['google'])): ?>
+                <div class="alert error">
+                    <?php foreach ($errors['google'] as $err): ?><p><?= e($err) ?></p><?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="connect-row">
+                <div class="connect-info">
+                    <span class="connect-logo" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 48 48">
+                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <div class="connect-name">Google</div>
+                        <div class="connect-status <?= $has_google ? 'on' : '' ?>"><?= $has_google ? 'I lidhur' : 'I palidhur' ?></div>
+                    </div>
+                </div>
+
+                <?php if (!$has_google): ?>
+                    <form method="POST" action="google-callback.php" class="connect-action">
+                        <input type="hidden" name="csrf"   value="<?= e(csrf_token()) ?>">
+                        <input type="hidden" name="action" value="link">
+                        <button type="submit" class="btn-google">Lidh Google</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+
+            <?php if (!$has_google): ?>
+                <p class="connect-note">Kur te lidhesh Google, emaili i llogarise (<strong><?= e($user['email']) ?></strong>) zevendesohet me emailin e verifikuar te Google.</p>
+            <?php endif; ?>
+
+            <?php if ($has_google && $is_google_only): ?>
+                <p class="connect-note">Google eshte tani menyra e vetme per t'u kyqur. Vendos nje password me siper nese deshiron ta shkeputesh.</p>
+
+            <?php elseif ($has_google): ?>
+                <form method="POST" class="connect-unlink" novalidate>
+                    <input type="hidden" name="csrf"   value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="action" value="unlink">
+
+                    <label for="unlink_password">Per ta shkeputur, konfirmo me password-in tend</label>
+                    <input type="password" id="unlink_password" name="unlink_password"
+                           placeholder="••••••••" autocomplete="current-password" required>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-outline">Shkput Google</button>
+                    </div>
+                </form>
+            <?php endif; ?>
+        </section>
 
         <!-- ================= FSHI LLOGARINE ================= -->
         <form method="POST" class="settings-card danger" id="delete" novalidate

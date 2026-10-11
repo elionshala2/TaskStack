@@ -12,8 +12,14 @@ session_start();
 // Funksion ndihmes: ruan gabimin dhe kthen userin ne login
 function google_fail(string $msg): void
 {
+    $dest = 'login.php';
+    // nese useri eshte i kyqur dhe po lidh Google nga settings, kthehu atje
+    if (!empty($_SESSION['user_id']) && !empty($_SESSION['google_link'])) {
+        $dest = 'settings.php';
+        unset($_SESSION['google_link']);
+    }
     $_SESSION['flash_error'] = $msg;
-    redirect('login.php');
+    redirect($dest);
     exit;
 }
 
@@ -73,11 +79,35 @@ function google_make_username(mysqli $conn, string $name, string $email): string
     return 'user' . bin2hex(random_bytes(4));
 }
 
-// Nese tashme i kyqur
+// Nese tashme i kyqur: lejohet vetem per te LIDHUR Google nga settings.php
+$start_link = false;
 if (!empty($_SESSION['user_id'])) {
-    redirect('index.php');
-    exit;
+    $uid        = (int)$_SESSION['user_id'];
+    $start_link = $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'link';
+
+    if ($start_link) {
+        // Fillimi i lidhjes vetem me POST + CSRF, qe nje faqe e huaj te mos
+        // mund te lidhe Google-in e dikujt tjeter me llogarine tende.
+        if (!verify_csrf($_POST['csrf'] ?? '')) {
+            $_SESSION['flash_error'] = 'Kerkese e pavlefshme. Provo perseri.';
+            redirect('settings.php');
+        }
+        $_SESSION['google_link'] = $uid;
+
+    } elseif ((int)($_SESSION['google_link'] ?? 0) !== $uid) {
+        redirect('index.php'); // i kyqur dhe jo ne link mode
+        exit;
+
+    } elseif (!isset($_GET['code']) && !isset($_GET['error'])) {
+        unset($_SESSION['google_link']); // link mode i vjeter, pastroje
+        redirect('settings.php');
+    }
+} else {
+    unset($_SESSION['google_link']);
 }
+
+// > 0 kur po lidhim Google me llogarine e kyqur (jo kyqje/signup)
+$linking_user = !empty($_SESSION['user_id']) ? (int)($_SESSION['google_link'] ?? 0) : 0;
 
 // Useri e anuloi ose Google ktheu gabim
 if (isset($_GET['error'])) {
@@ -134,6 +164,62 @@ $gid   = trim($info['sub'] ?? ''); // ID unike e Google per kete user
 
 if ($gid === '' || $email === '' || empty($info['email_verified'])) {
     google_fail('Emaili i Google nuk eshte i verifikuar.');
+}
+
+/* ---------- LIDHJE: useri i kyqur po lidh Google nga settings ---------- */
+if ($linking_user > 0) {
+    unset($_SESSION['google_link']);
+
+    try {
+        // A eshte ky Google ID i lidhur me nje llogari?
+        $stmt = $conn->prepare("SELECT id FROM regjistrimi WHERE google_id = ? LIMIT 1");
+        $stmt->bind_param("s", $gid);
+        $stmt->execute();
+        $other = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if ($other && (int)$other['id'] !== $linking_user) {
+            $_SESSION['flash_error'] = 'Ky Google eshte i lidhur me nje llogari tjeter TaskStack.';
+
+        } elseif ($other) {
+            $_SESSION['flash_success'] = 'Google eshte tashme i lidhur me llogarine tende.';
+
+        } else {
+            // Emaili i llogarise behet emaili i verifikuar i Google (nuk mbetet nje email i rremë).
+            // Nese ky email i perket nje llogarie tjeter TaskStack, nuk lidhet.
+            $stmt = $conn->prepare("SELECT id FROM regjistrimi WHERE email = ? AND id <> ? LIMIT 1");
+            $stmt->bind_param("si", $email, $linking_user);
+            $stmt->execute();
+            $emailTaken = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+
+            if ($emailTaken) {
+                $_SESSION['flash_error'] = 'Emaili i ketij Google (' . $email . ') perdoret nga nje llogari tjeter TaskStack.';
+            } else {
+                // lidh vetem nese llogaria nuk ka tashme nje Google te lidhur
+                $stmt = $conn->prepare(
+                    "UPDATE regjistrimi SET google_id = ?, email = ?
+                     WHERE id = ? AND (google_id IS NULL OR google_id = '')"
+                );
+                $stmt->bind_param("ssi", $gid, $email, $linking_user);
+                $stmt->execute();
+                $linked = $stmt->affected_rows > 0;
+                $stmt->close();
+
+                if ($linked) {
+                    $_SESSION['flash_success'] = 'Google u lidh me sukses! Emaili i llogarise tani eshte ' . $email . '.';
+                } else {
+                    $_SESSION['flash_error'] = 'Llogaria jote ka tashme nje Google te lidhur.';
+                }
+            }
+        }
+    } catch (mysqli_sql_exception $e) {
+        error_log('Google link error: ' . $e->getMessage());
+        $_SESSION['flash_error'] = 'Diqka shkoi gabim. Provo perseri.';
+    }
+
+    redirect('settings.php');
+    exit;
 }
 
 try {
@@ -200,4 +286,4 @@ try {
 } catch (mysqli_sql_exception $e) {
     error_log('Google login error: ' . $e->getMessage());
     google_fail('Diqka shkoi gabim. Provo perseri.');
-}
+}   
