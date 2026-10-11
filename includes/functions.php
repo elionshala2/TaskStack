@@ -26,9 +26,74 @@ function redirect($url) {
 
 // Kontrollon nese useri osht i kyqur, nese jo e perdor funksionin redirect per me kthy ne login
 function require_login() {
+    global $conn;
+    validate_session($conn); // sesion i vjeter (pas ndryshimit te passwordit / "mbyll sesionet e tjera") hiqet ketu
     if (empty($_SESSION['user_id'])) {
         $prefix = str_contains($_SERVER['SCRIPT_NAME'], '/tasks/') ? '../' : '';
         redirect($prefix . 'login.php');
+    }
+}
+
+// =================================================================
+// Sesionet: cdo user ka nje "session_version" ne databaze. Cdo sesion ruan kopjen e vet ($_SESSION['sv']).
+// Kur versioni rritet (ndryshim/reset password, "Mbyll sesionet e tjera"), te gjitha sesionet me version
+// te vjeter pushojne se vlejne dhe useri duhet te kyqet perseri.
+// =================================================================
+
+// Merr versionin aktual te sesionit per nje user (null nese useri nuk ekziston me)
+function get_session_version($conn, int $user_id): ?int {
+    $stmt = $conn->prepare("SELECT session_version FROM regjistrimi WHERE id = ? LIMIT 1");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $row ? (int)$row['session_version'] : null;
+}
+
+// Rrit versionin => te gjitha sesionet ekzistuese te userit behen te pavlefshme. Kthen versionin e ri.
+// Sesioni aktual duhet ta ruaje versionin e ri vete: $_SESSION['sv'] = bump_session_version(...)
+function bump_session_version($conn, int $user_id): int {
+    $stmt = $conn->prepare("UPDATE regjistrimi SET session_version = session_version + 1 WHERE id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $stmt->close();
+    return (int)get_session_version($conn, $user_id);
+}
+
+// Kyq userin: rigjeneron session ID (mbrojtje session fixation), rrotullon tokenin CSRF
+// dhe ruan versionin aktual te sesionit.
+function login_user($conn, int $user_id, string $username): void {
+    $sv = get_session_version($conn, $user_id) ?? 1;
+    session_regenerate_id(true);
+    unset($_SESSION['csrf']);
+    $_SESSION['user_id']  = $user_id;
+    $_SESSION['username'] = $username;
+    $_SESSION['sv']       = $sv;
+}
+
+// Kontrollon qe sesioni i kyqur eshte ende i vlefshem: useri ekziston dhe versioni perputhet.
+// Nese jo, e c'kyq sesionin (pa e prekur session ID, qe te mund te thirret edhe pasi ka filluar output-i).
+function validate_session($conn): void {
+    static $done = false;
+    if ($done || empty($_SESSION['user_id'])) {
+        return;
+    }
+    $done  = true;
+    $valid = false;
+
+    try {
+        $current = get_session_version($conn, (int)$_SESSION['user_id']);
+        $valid   = $current !== null
+            && isset($_SESSION['sv'])
+            && (int)$_SESSION['sv'] === $current;
+    } catch (mysqli_sql_exception $e) {
+        error_log("Session validate error: " . $e->getMessage());
+        $valid = false; // ne dyshim, mos e lejo sesionin
+    }
+
+    if (!$valid) {
+        unset($_SESSION['user_id'], $_SESSION['username'], $_SESSION['sv'], $_SESSION['google_link']);
+        $_SESSION['flash_error'] = 'Sesioni yt perfundoi. Kyqu perseri.';
     }
 }
 

@@ -49,9 +49,12 @@ if ($valid && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $prev = $stmt->get_result()->fetch_assoc();
                 $stmt->close();
 
-                // provider = 'local' (si ne settings.php); email_verified = 1 sepse useri e provoi qe e zoteron emailin
+                // provider = 'local' (si ne settings.php); email_verified = 1 sepse useri e provoi qe e zoteron emailin;
+                // session_version + 1 => te gjitha sesionet ekzistuese mbyllen (dikush mund ta kete pasur llogarine te hapur)
                 $stmt = $conn->prepare(
-                    "UPDATE regjistrimi SET password = ?, provider = 'local', email_verified = 1 WHERE id = ?"
+                    "UPDATE regjistrimi SET password = ?, provider = 'local', email_verified = 1,
+                            session_version = session_version + 1
+                     WHERE id = ?"
                 );
                 $stmt->bind_param("si", $hash, $uid);
                 $stmt->execute();

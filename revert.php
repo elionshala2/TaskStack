@@ -53,7 +53,7 @@ if ($state === 'form' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     $state = 'taken';
                 } else {
                     // useri e hapi linkun nga inbox-i i emailit te vjeter, ndaj ai email vlen si i verifikuar
-                    $stmt = $conn->prepare("UPDATE regjistrimi SET email = ?, email_verified = 1 WHERE id = ?");
+                    $stmt = $conn->prepare("UPDATE regjistrimi SET email = ?, email_verified = 1, session_version = session_version + 1 WHERE id = ?");
                     $stmt->bind_param("si", $old_email, $uid);
                     $stmt->execute();
                     $stmt->close();
@@ -71,7 +71,7 @@ if ($state === 'form' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (strlen($old_hash) < 20 || $old_hash[0] !== '$') {
                     $state = 'invalid';
                 } else {
-                    $stmt = $conn->prepare("UPDATE regjistrimi SET password = ?, provider = ? WHERE id = ?");
+                    $stmt = $conn->prepare("UPDATE regjistrimi SET password = ?, provider = ?, session_version = session_version + 1 WHERE id = ?");
                     $stmt->bind_param("ssi", $old_hash, $provider, $uid);
                     $stmt->execute();
                     $stmt->close();

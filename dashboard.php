@@ -362,7 +362,7 @@ else                 { $greet = 'Mirembrema'; }
                         <a href="tasks/edit_task.php?id=<?= (int)$task['id'] ?>" class="icon-btn" title="Edito">&#9999;&#65039;</a>
 
                         <form action="tasks/delete_task.php" method="POST" class="inline-form"
-                              onsubmit="return confirm('Fshij kete detyre?');">
+                              data-confirm="Fshij kete detyre?">
                             <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
                             <input type="hidden" name="id"   value="<?= (int)$task['id'] ?>">
                             <button type="submit" class="icon-btn" title="Fshij">&#128465;&#65039;</button>

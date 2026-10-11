@@ -293,10 +293,8 @@ try {
         $user = ['id' => $new_id, 'username' => $username];
     }
 
-    // Kyq userin
-    session_regenerate_id(true);
-    $_SESSION['user_id']  = $user['id'];
-    $_SESSION['username'] = $user['username'];
+    // Kyq userin (rigjeneron session ID + ruan versionin e sesionit)
+    login_user($conn, (int)$user['id'], $user['username']);
 
     redirect('index.php');
     exit;

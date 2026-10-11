@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS regjistrimi (
     email_verified TINYINT(1)   NOT NULL DEFAULT 0,
     provider       ENUM('local','google','apple','passkey') NOT NULL,
     google_id      VARCHAR(255) NULL UNIQUE,
+    session_version INT UNSIGNED NOT NULL DEFAULT 1, -- rritet kur ndryshon/rivendoset passwordi ose mbyllen sesionet e tjera
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 

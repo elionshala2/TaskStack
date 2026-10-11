@@ -1,6 +1,8 @@
 <?php
 // logout.php
 
+require_once __DIR__ . '/includes/session.php'; // cilesimet e njejta te cookie-t si ne faqet e tjera
+
 session_start();
 
 // Fshi te gjitha variablat e sesionit

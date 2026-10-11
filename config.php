@@ -1,5 +1,6 @@
 <?php
 // config.php
+require_once __DIR__ . '/includes/session.php'; // cilesimet e sigurta te sesionit + headers e sigurise (para session_start)
 require_once __DIR__ . '/vendor/autoload.php'; // autoload per te ngarkuar Dotenv dhe librarite e tjera nga composer
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__); // krijimi i instances se Dotenv per te lexuar variablat e mjedisit nga .env
 $dotenv->load(); // ngarkon variablat e mjedisit nga .env ne $_ENV

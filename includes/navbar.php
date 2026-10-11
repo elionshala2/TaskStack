@@ -4,6 +4,9 @@
 if (session_status() === PHP_SESSION_NONE) { // nese sesioni nuk eshte startuar, e starton
     session_start();
 }
+if (isset($conn) && function_exists('validate_session')) { // sesion i vjeter hiqet para se te vendoset $isLoggedIn
+    validate_session($conn);
+}
 $isLoggedIn = !empty($_SESSION['user_id']); // shikon nese perdoruesi eshte i kyqur ose jo
 $username   = $_SESSION['username'] ?? ''; // merr userin e perdoruesit
 $current    = basename($_SERVER['PHP_SELF']); // merr emrin e faqes aktuale per me e bo active linkun ne navbar

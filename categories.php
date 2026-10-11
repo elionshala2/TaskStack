@@ -150,7 +150,7 @@ if (!empty($_SESSION['flash_error'])) {
 
                             <?php if (!$isDefault): ?>
                                 <form action="tasks/delete_category.php" method="POST" class="inline-form"
-                                      onsubmit="return confirm('Fshij kete kategori? Detyrat do mbeten pa kategori.');">
+                                      data-confirm="Fshij kete kategori? Detyrat do mbeten pa kategori.">
                                     <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
                                     <input type="hidden" name="id"   value="<?= $cid ?>">
                                     <button type="submit" class="icon-btn" title="Fshij">&#128465;&#65039;</button>

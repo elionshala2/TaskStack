@@ -96,4 +96,14 @@ document.addEventListener('DOMContentLoaded', function () {
         title.addEventListener('input', upd);
         upd();
     }
+
+    // ---------- 5. Konfirmim para veprimeve te rrezikshme (data-confirm) ----------
+    // Zevendeson onsubmit="return confirm(...)" inline, qe Content-Security-Policy e bllokon.
+    document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (!window.confirm(form.getAttribute('data-confirm'))) {
+                e.preventDefault();
+            }
+        });
+    });
 });

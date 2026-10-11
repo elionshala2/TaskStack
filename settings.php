@@ -12,7 +12,7 @@ require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne logi
 $user_id = (int)$_SESSION['user_id']; // merr user_id nga sessioni
 
 // gabimet ndahen sipas seksionit, qe cdo karte te shfaqe vetem gabimet e veta
-$errors = ['general' => [], 'username' => [], 'email' => [], 'password' => [], 'google' => [], 'delete' => []];
+$errors = ['general' => [], 'username' => [], 'email' => [], 'password' => [], 'google' => [], 'sessions' => [], 'delete' => []];
 
 // Ngarkon te dhenat e userit nga databaza
 function load_user(mysqli $conn, int $user_id): ?array
@@ -198,22 +198,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // provider behet 'local' qe nga tani faqja te kerkoje passwordin aktual
                 // (google_id mbetet, ndaj kyqja me Google vazhdon te funksionoje)
-                $stmt = $conn->prepare("UPDATE regjistrimi SET password = ?, provider = 'local' WHERE id = ?");
+                // session_version + 1 => te gjitha sesionet e tjera mbyllen (kjo pajisje mbetet e kyqur)
+                $stmt = $conn->prepare(
+                    "UPDATE regjistrimi SET password = ?, provider = 'local', session_version = session_version + 1 WHERE id = ?"
+                );
                 $stmt->bind_param("si", $hash, $user_id);
                 $stmt->execute();
                 $stmt->close();
 
+                $_SESSION['sv'] = (int)get_session_version($conn, $user_id); // sesioni aktual e merr versionin e ri
                 session_regenerate_id(true); // siguri pas ndryshimit te kredencialeve
 
                 $_SESSION['flash_success'] = $is_google_only
-                    ? 'Password-i u vendos! Tani mund te kyqesh edhe me email dhe password.'
-                    : 'Password-i u ndryshua me sukses!';
+                    ? 'Password-i u vendos! Tani mund te kyqesh edhe me email dhe password. Sesionet ne pajisjet e tjera u mbyllen.'
+                    : 'Password-i u ndryshua me sukses! Sesionet ne pajisjet e tjera u mbyllen.';
                 redirect('settings.php');
 
             } catch (mysqli_sql_exception $e) {
                 error_log("Settings password error: " . $e->getMessage());
                 $errors['password'][] = 'Diqka shkoi gabim. Provo perseri.';
             }
+        }
+
+    // ---------- 2b. Mbyll sesionet ne pajisjet e tjera ----------
+    } elseif ($action === 'logout_others') {
+
+        try {
+            // rrit versionin => cdo sesion tjeter bie; kjo pajisje e ruan versionin e ri
+            $_SESSION['sv'] = bump_session_version($conn, $user_id);
+            session_regenerate_id(true);
+
+            $_SESSION['flash_success'] = 'U mbyllen sesionet ne te gjitha pajisjet e tjera. Kjo pajisje mbetet e kyqur.';
+            redirect('settings.php');
+
+        } catch (mysqli_sql_exception $e) {
+            error_log("Settings logout others error: " . $e->getMessage());
+            $errors['sessions'][] = 'Diqka shkoi gabim. Provo perseri.';
         }
 
     // ---------- 3. Shkput Google ----------
@@ -325,7 +345,6 @@ $has_google   = !empty($user['google_id']);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/style.css?v=<?= (int)@filemtime(__DIR__ . '/assets/style.css') ?>">
-    <link rel="stylesheet" href="assets/settings.css?v=<?= (int)@filemtime(__DIR__ . '/assets/settings.css') ?>">
 </head>
 <body>
 <?php require_once __DIR__ . '/includes/navbar.php'; ?>
@@ -471,6 +490,27 @@ $has_google   = !empty($user['google_id']);
             </div>
         </form>
 
+        <!-- ================= SESIONET ================= -->
+        <form method="POST" class="settings-card" id="sessions" novalidate>
+            <input type="hidden" name="csrf"   value="<?= e(csrf_token()) ?>">
+            <input type="hidden" name="action" value="logout_others">
+
+            <div class="settings-head">
+                <h2>Sesionet</h2>
+                <p>Je kyqur ne nje pajisje tjeter qe nuk e njeh, ose harrove te dilje diku? Mbyll sesionet ne te gjitha pajisjet e tjera. Kjo pajisje mbetet e kyqur. Ndryshimi i passwordit i mbyll sesionet e tjera automatikisht.</p>
+            </div>
+
+            <?php if (!empty($errors['sessions'])): ?>
+                <div class="alert error">
+                    <?php foreach ($errors['sessions'] as $err): ?><p><?= e($err) ?></p><?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-outline">Mbyll sesionet e tjera</button>
+            </div>
+        </form>
+
         <!-- ================= KYQJA ME GOOGLE ================= -->
         <section class="settings-card" id="google">
             <div class="settings-head">
@@ -534,7 +574,7 @@ $has_google   = !empty($user['google_id']);
 
         <!-- ================= FSHI LLOGARINE ================= -->
         <form method="POST" class="settings-card danger" id="delete" novalidate
-              onsubmit="return confirm('Je i sigurt? Llogaria dhe te gjitha detyrat do te fshihen pergjithmone.');">
+              data-confirm="Je i sigurt? Llogaria dhe te gjitha detyrat do te fshihen pergjithmone.">
             <input type="hidden" name="csrf"   value="<?= e(csrf_token()) ?>">
             <input type="hidden" name="action" value="delete">
 
