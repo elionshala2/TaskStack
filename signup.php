@@ -183,6 +183,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Regjistrohu me Google
         </a>
 
+        <p class="auth-legal">Duke vazhduar, pranon <a href="terms.php">Kushtet e Sherbimit</a> dhe <a href="privacy.php">Politiken e Privatesise</a>.</p>
+
         <p>Ke llogari? <a href="login.php">Login</a></p>
         <p><a href="index.php">&larr; Kthehu ne faqen kryesore</a></p>
     </div>

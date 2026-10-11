@@ -8,7 +8,7 @@ session_start(); // startohet sessioni per te ruajtur user_id dhe tokenin CSRF
 
 // Nese tashme i kyqur shkon ne dashboard
 if (!empty($_SESSION['user_id'])) {
-    redirect('index.php'); // redirect ne dashboard nese useri eshte i kyqur
+    redirect('dashboard.php'); // redirect ne dashboard nese useri eshte i kyqur
 }
 
 $errors  = []; // array per te ruajtur gabimet
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['username'] = $user['username'];
 
                     // Shko ne dashboard
-                    redirect('index.php');
+                    redirect('dashboard.php');
 
                 } else {
                     // Numro tentativen e gabuar
@@ -154,6 +154,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </svg>
             Vazhdo me Google
         </a>
+
+        <p class="auth-legal">Duke vazhduar, pranon <a href="terms.php">Kushtet e Sherbimit</a> dhe <a href="privacy.php">Politiken e Privatesise</a>.</p>
 
         <p>Nuk ke llogari? <a href="signup.php">Regjistrohu</a></p>
         <p><a href="index.php">&larr; Kthehu ne faqen kryesore</a></p>

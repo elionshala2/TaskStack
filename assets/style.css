@@ -17,6 +17,7 @@
    13. Categories page
    14. Task form (add / edit)
    15. Landing page
+   15b. Legal pages (privacy / terms)
    16. Footer
    17. Responsive
    18. Accessibility (focus, reduced motion)
@@ -2214,6 +2215,133 @@ a.task-cat .dot {
     font-size: 14px;
     line-height: 1.7;
     color: var(--text-soft);
+}
+
+
+/* =========================================================
+   15b. LEGAL PAGES (privacy / terms)
+   ========================================================= */
+.legal {
+    flex: 1;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 52px 24px 40px;
+    animation: slideUp 0.5s var(--ease);
+}
+
+.legal-header {
+    margin-bottom: 32px;
+}
+
+.legal-header h1 {
+    margin-bottom: 8px;
+}
+
+.legal-meta {
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.legal-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    align-items: start;
+    gap: 40px;
+}
+
+/* tabela e permbajtjes (ngelet gjate scroll) */
+.legal-toc {
+    position: sticky;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.legal-toc a {
+    padding: 7px 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+    border-left: 2px solid var(--border);
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.legal-toc a:hover {
+    color: var(--text);
+    border-color: var(--accent-2);
+}
+
+.legal-content {
+    padding: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+}
+
+.legal-content h2 {
+    margin: 36px 0 10px;
+    font-size: 20px;
+    color: var(--text);
+    scroll-margin-top: 90px;
+}
+
+.legal-content h2:first-child {
+    margin-top: 0;
+}
+
+.legal-content p,
+.legal-content li {
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--text-soft);
+}
+
+.legal-content p + p {
+    margin-top: 12px;
+}
+
+.legal-content ul {
+    margin-top: 10px;
+    padding-left: 22px;
+}
+
+.legal-content li + li {
+    margin-top: 6px;
+}
+
+.legal-content strong {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.legal-content a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* tekst i vogel per pranimin e kushteve (login / signup) */
+.auth-box .auth-legal {
+    margin-top: 18px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.auth-box .auth-legal a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+    .legal-layout { grid-template-columns: 1fr; }
+    .legal-toc    { display: none; }
+}
+
+@media (max-width: 600px) {
+    .legal         { padding: 32px 16px 24px; }
+    .legal-content { padding: 24px; }
 }
 
 

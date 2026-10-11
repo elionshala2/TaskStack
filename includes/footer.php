@@ -19,10 +19,14 @@ $f_loggedIn  = !empty($_SESSION['user_id']); // shikon neser perdoruesi eshte i 
             <?php if ($f_loggedIn): ?>
                 <a href="<?= $f_prefix ?>dashboard.php">Dashboard</a>
                 <a href="<?= $f_prefix ?>categories.php">Kategorite</a>
+                <a href="<?= $f_prefix ?>privacy.php">Privacy Policy</a>
+                <a href="<?= $f_prefix ?>terms.php">Terms of Service</a>
                 <a href="<?= $f_prefix ?>logout.php">Logout</a>
             <?php else: ?>
                 <a href="<?= $f_prefix ?>login.php">Login</a>
                 <a href="<?= $f_prefix ?>signup.php">Sign Up</a>
+                <a href="<?= $f_prefix ?>privacy.php">Privacy Policy</a>
+                <a href="<?= $f_prefix ?>terms.php">Terms of Service</a>
             <?php endif; ?>
         </div>
 
