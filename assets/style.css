@@ -16,6 +16,7 @@
    12. Task list
    13. Categories page
    14. Task form (add / edit)
+   14b. Settings
    15. Landing page
    15b. Legal pages (privacy / terms)
    16. Footer
@@ -1645,6 +1646,180 @@ a.task-cat .dot {
 .form-actions .btn-outline {
     padding: 11px 22px;
     font-size: 14px;
+}
+
+
+/* =========================================================
+   14b. SETTINGS (settings.php)
+   ========================================================= */
+.settings-page {
+    max-width: 720px;
+}
+
+.settings-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ---------- Karta e profilit ---------- */
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding: 28px 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+}
+
+.avatar {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 68px;
+    height: 68px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--grad);
+    border-radius: 50%;
+    box-shadow: 0 0 28px var(--accent-glow);
+}
+
+.profile-info {
+    min-width: 0;
+}
+
+.profile-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    word-wrap: break-word;
+}
+
+.profile-email {
+    margin-top: 2px;
+    font-size: 14px;
+    color: var(--text-soft);
+    word-wrap: break-word;
+}
+
+.profile-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.chip {
+    padding: 3px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #a78bfa;
+    background: rgba(124, 58, 237, 0.12);
+    border: 1px solid rgba(124, 58, 237, 0.3);
+    border-radius: 999px;
+}
+
+.chip-google {
+    color: #67e8f9;
+    background: rgba(6, 182, 212, 0.1);
+    border-color: rgba(6, 182, 212, 0.3);
+}
+
+.chip-muted {
+    color: var(--text-dim);
+    background: var(--surface);
+    border-color: var(--border);
+}
+
+/* ---------- Kartat e formave ---------- */
+.settings-card {
+    position: relative;
+    padding: 32px 36px 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    scroll-margin-top: 88px;
+}
+
+.settings-head {
+    margin-bottom: 6px;
+}
+
+.settings-head h2 {
+    margin-bottom: 4px;
+    font-size: 19px;
+    color: var(--text);
+}
+
+.settings-head p {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text-dim);
+}
+
+.settings-card .alert {
+    margin-top: 16px;
+    margin-bottom: 0;
+}
+
+.settings-card .form-actions {
+    margin-top: 24px;
+}
+
+/* ---------- Zona e rrezikut ---------- */
+.settings-card.danger {
+    border-color: rgba(239, 68, 68, 0.28);
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.3),
+        0 0 60px rgba(239, 68, 68, 0.05);
+}
+
+.settings-card.danger .settings-head h2 {
+    color: #f87171;
+}
+
+.settings-card.danger input:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+}
+
+.settings-card label strong {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow:
+        0 8px 24px rgba(239, 68, 68, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-danger:hover {
+    box-shadow:
+        0 12px 32px rgba(239, 68, 68, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 600px) {
+    .profile-card,
+    .settings-card { padding: 24px 20px; }
+    .profile-card  { gap: 16px; }
+    .avatar        { width: 56px; height: 56px; font-size: 22px; }
 }
 
 
