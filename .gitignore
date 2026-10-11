@@ -6,3 +6,4 @@ logs/
 Thumbs.db
 .env
 .env.local
+/vendor

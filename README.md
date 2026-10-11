@@ -5,7 +5,10 @@ Nje web aplikacion per menaxhimin e detyrave me autentifikim perdoruesi, i ndert
 1. Hap XAMPP (Apache + MySQL)
 2. Importo `database.sql` ne phpMyAdmin (krijon databazen `todolist` dhe tabelat)
 3. Vendose folderin e projektit ne `htdocs`
-4. Hap `http://localhost/to-do-list/`
+4. Instalo composer https://getcomposer.org/ 
+5. Hap terminalin e projektit dhe shkruaj composer install
+6. Krijo .env duke e krijuar shembullin .env.example dhe duke i vendosur te dhenat
+7. Hap `http://localhost/to-do-list/`
 
 ## Kerkesat
 - Faqja Kryesore index.php, qe e fton perdoruesin me kriju llogari

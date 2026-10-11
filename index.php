@@ -92,7 +92,7 @@ $username   = $_SESSION['username'] ?? ''; // ruan username nese useri eshte i k
         </div>
     </section>
 
-    <!-- ================= STRIP ================= -->
+    <!-- ================= STRIPI ================= -->
     <section class="strip">
         <div><strong>&lt; 2s</strong><span>koha e hapjes</span></div>
         <div><strong>3</strong><span>nivele prioriteti</span></div>
