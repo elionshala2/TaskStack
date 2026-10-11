@@ -1,0 +1,214 @@
+<?php
+// includes/mailer.php
+// Dergimi i emaileve (PHPMailer + SMTP) dhe tokenat per verifikim / reset password.
+// Kerkon:  composer require phpmailer/phpmailer
+
+require_once __DIR__ . '/functions.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+
+define('VERIFY_TTL_MINUTES', 1440);   // linku i verifikimit vlen 24 ore
+define('RESET_TTL_MINUTES', 60);      // linku i reset password vlen 1 ore
+define('MAIL_COOLDOWN_SECONDS', 60);  // sa pritet para se te dergohet email i ri per te njejtin user
+define('MAX_MAIL_REQUESTS', 5);       // max kerkesa per IP ...
+define('MAIL_WINDOW_MINUTES', 15);    // ... brenda ketyre minutave
+
+// Baza e URL-se per linqet ne email (merret nga .env, jo nga Host header qe te mos manipulohet)
+function app_url(): string {
+    return rtrim($_ENV['APP_URL'] ?? 'http://localhost/taskstack', '/');
+}
+
+// Dergon nje email. Kthen true/false (gabimi ruhet vetem ne log)
+function send_mail(string $to, string $subject, string $html, string $text): bool {
+    $host = $_ENV['SMTP_HOST'] ?? '';
+    if ($host === '') {
+        error_log('Mail: SMTP_HOST nuk eshte vendosur ne .env');
+        return false;
+    }
+
+    try {
+        $m = new PHPMailer(true);
+        $m->isSMTP();
+        $m->Host       = $host;
+        $m->Port       = (int)($_ENV['SMTP_PORT'] ?? 587);
+        $m->SMTPAuth   = true;
+        $m->Username   = $_ENV['SMTP_USER'] ?? '';
+        $m->Password   = $_ENV['SMTP_PASS'] ?? '';
+        $secure        = strtolower($_ENV['SMTP_SECURE'] ?? 'tls');
+        $m->SMTPSecure = ($secure === 'ssl') ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
+        $m->CharSet    = 'UTF-8';
+
+        $from = $_ENV['SMTP_FROM'] ?? $m->Username;
+        $m->setFrom($from, $_ENV['SMTP_FROM_NAME'] ?? 'TaskStack');
+        $m->addAddress($to);
+
+        $m->isHTML(true);
+        $m->Subject = $subject;
+        $m->Body    = $html;
+        $m->AltBody = $text;
+        $m->send();
+        return true;
+    } catch (\Throwable $ex) {
+        error_log('Mail error: ' . $ex->getMessage());
+        return false;
+    }
+}
+
+// ---------------------------------------------------------------
+// Tokenat (ne DB ruhet vetem hash-i SHA-256, jo tokeni vete)
+// ---------------------------------------------------------------
+
+// Krijon token te ri dhe i ben te pavlefshem te vjetrit e pa-perdorur te se njejtit lloj
+function create_email_token($conn, int $user_id, string $type): string {
+    $token   = bin2hex(random_bytes(32));
+    $hash    = hash('sha256', $token);
+    $minutes = ($type === 'verify') ? VERIFY_TTL_MINUTES : RESET_TTL_MINUTES;
+
+    $stmt = $conn->prepare("UPDATE email_tokens SET used_at = NOW() WHERE user_id = ? AND type = ? AND used_at IS NULL");
+    $stmt->bind_param("is", $user_id, $type);
+    $stmt->execute();
+    $stmt->close();
+
+    $stmt = $conn->prepare(
+        "INSERT INTO email_tokens (user_id, type, token_hash, expires_at)
+         VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))"
+    );
+    $stmt->bind_param("issi", $user_id, $type, $hash, $minutes);
+    $stmt->execute();
+    $stmt->close();
+
+    return $token;
+}
+
+// Gjen token te vlefshem (jo i perdorur, jo i skaduar). Kthen ['id'=>, 'user_id'=>] ose null
+function find_email_token($conn, string $token, string $type): ?array {
+    if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
+        return null;
+    }
+    $hash = hash('sha256', $token);
+
+    $stmt = $conn->prepare(
+        "SELECT id, user_id FROM email_tokens
+         WHERE token_hash = ? AND type = ? AND used_at IS NULL AND expires_at > NOW()
+         LIMIT 1"
+    );
+    $stmt->bind_param("ss", $hash, $type);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    return $row ?: null;
+}
+
+function mark_token_used($conn, int $token_id): void {
+    $stmt = $conn->prepare("UPDATE email_tokens SET used_at = NOW() WHERE id = ?");
+    $stmt->bind_param("i", $token_id);
+    $stmt->execute();
+    $stmt->close();
+}
+
+// A eshte derguar email i ketij lloji per kete user se fundmi (cooldown)?
+function recent_token_exists($conn, int $user_id, string $type): bool {
+    $stmt = $conn->prepare(
+        "SELECT 1 FROM email_tokens
+         WHERE user_id = ? AND type = ? AND created_at > (NOW() - INTERVAL " . (int)MAIL_COOLDOWN_SECONDS . " SECOND)
+         LIMIT 1"
+    );
+    $stmt->bind_param("is", $user_id, $type);
+    $stmt->execute();
+    $stmt->store_result();
+    $found = $stmt->num_rows > 0;
+    $stmt->close();
+    return $found;
+}
+
+// ---------------------------------------------------------------
+// Limit per IP (qe dikush te mos e perdore formen per te bombarduar inbox-e)
+// ---------------------------------------------------------------
+
+function mail_requests_count($conn, string $ip): int {
+    try {
+        $stmt = $conn->prepare(
+            "SELECT COUNT(*) AS c FROM mail_requests
+             WHERE ip = ? AND requested_at > (NOW() - INTERVAL " . (int)MAIL_WINDOW_MINUTES . " MINUTE)"
+        );
+        $stmt->bind_param("s", $ip);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return (int)($row['c'] ?? 0);
+    } catch (mysqli_sql_exception $ex) {
+        error_log('Mail rate limit count error: ' . $ex->getMessage());
+        return 0;
+    }
+}
+
+function record_mail_request($conn, string $ip): void {
+    try {
+        $stmt = $conn->prepare("INSERT INTO mail_requests (ip) VALUES (?)");
+        $stmt->bind_param("s", $ip);
+        $stmt->execute();
+        $stmt->close();
+    } catch (mysqli_sql_exception $ex) {
+        error_log('Mail rate limit insert error: ' . $ex->getMessage());
+    }
+}
+
+// ---------------------------------------------------------------
+// Shabllonet e emaileve
+// ---------------------------------------------------------------
+
+function email_template(string $heading, string $intro, string $btn_text, string $link, string $note): string {
+    $heading  = e($heading);
+    $intro    = e($intro);
+    $btn_text = e($btn_text);
+    $note     = e($note);
+    $href     = e($link);
+
+    return '<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">'
+        . '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px;"><tr><td align="center">'
+        . '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:14px;padding:32px;">'
+        . '<tr><td style="font-size:22px;font-weight:700;color:#111827;padding-bottom:6px;">TaskStack</td></tr>'
+        . '<tr><td style="font-size:18px;font-weight:700;color:#111827;padding:18px 0 8px;">' . $heading . '</td></tr>'
+        . '<tr><td style="font-size:15px;line-height:1.6;color:#374151;padding-bottom:22px;">' . $intro . '</td></tr>'
+        . '<tr><td style="padding-bottom:22px;"><a href="' . $href . '" style="display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 24px;border-radius:10px;">' . $btn_text . '</a></td></tr>'
+        . '<tr><td style="font-size:12px;line-height:1.6;color:#6b7280;">Nese butoni nuk punon, kopjo kete link ne shfletues:<br><span style="word-break:break-all;">' . $href . '</span></td></tr>'
+        . '<tr><td style="font-size:12px;line-height:1.6;color:#6b7280;padding-top:16px;">' . $note . '</td></tr>'
+        . '</table></td></tr></table></body></html>';
+}
+
+function send_verification_email($conn, int $user_id, string $email, string $username): bool {
+    try {
+        $token = create_email_token($conn, $user_id, 'verify');
+    } catch (mysqli_sql_exception $ex) {
+        error_log('Verify token error: ' . $ex->getMessage());
+        return false;
+    }
+
+    $link  = app_url() . '/verify.php?token=' . $token;
+    $intro = "Pershendetje $username, faleminderit qe u regjistrove ne TaskStack. Kliko butonin per te verifikuar emailin tend.";
+    $note  = 'Linku vlen 24 ore. Nese nuk e ke krijuar ti kete llogari, injoroje kete email.';
+
+    $html = email_template('Verifiko emailin tend', $intro, 'Verifiko emailin', $link, $note);
+    $text = "$intro\n\n$link\n\n$note";
+
+    return send_mail($email, 'Verifiko emailin - TaskStack', $html, $text);
+}
+
+function send_reset_email($conn, int $user_id, string $email, string $username): bool {
+    try {
+        $token = create_email_token($conn, $user_id, 'reset');
+    } catch (mysqli_sql_exception $ex) {
+        error_log('Reset token error: ' . $ex->getMessage());
+        return false;
+    }
+
+    $link  = app_url() . '/reset_password.php?token=' . $token;
+    $intro = "Pershendetje $username, morem nje kerkese per te ndryshuar passwordin e llogarise tende TaskStack. Kliko butonin per te vendosur nje password te ri.";
+    $note  = 'Linku vlen 1 ore dhe perdoret vetem nje here. Nese nuk e ke kerkuar ti kete, injoroje kete email, passwordi yt nuk ndryshon.';
+
+    $html = email_template('Rivendos passwordin', $intro, 'Vendos password te ri', $link, $note);
+    $text = "$intro\n\n$link\n\n$note";
+
+    return send_mail($email, 'Rivendos passwordin - TaskStack', $html, $text);
+}

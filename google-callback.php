@@ -171,6 +171,19 @@ if ($linking_user > 0) {
     unset($_SESSION['google_link']);
 
     try {
+        // Llogaria duhet te kete emailin e verifikuar para se te lidhet Google
+        $stmt = $conn->prepare("SELECT email_verified FROM regjistrimi WHERE id = ? LIMIT 1");
+        $stmt->bind_param("i", $linking_user);
+        $stmt->execute();
+        $me = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$me || !(int)$me['email_verified']) {
+            $_SESSION['flash_error'] = 'Verifiko emailin e llogarise para se te lidhesh Google.';
+            redirect('settings.php');
+            exit;
+        }
+
         // A eshte ky Google ID i lidhur me nje llogari?
         $stmt = $conn->prepare("SELECT id FROM regjistrimi WHERE google_id = ? LIMIT 1");
         $stmt->bind_param("s", $gid);
@@ -232,7 +245,7 @@ try {
 
     // 2) Nese nuk u gjet, kerko me email (llogari ekzistuese 'local')
     if (!$user) {
-        $stmt = $conn->prepare("SELECT id, username, google_id FROM regjistrimi WHERE email = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT id, username, google_id, email_verified FROM regjistrimi WHERE email = ? LIMIT 1");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $byEmail = $stmt->get_result()->fetch_assoc();
@@ -242,6 +255,11 @@ try {
             // Emaili i perket nje Google ID tjeter -> mos e lidh
             if (!empty($byEmail['google_id']) && $byEmail['google_id'] !== $gid) {
                 google_fail('Ky email eshte i lidhur me nje llogari tjeter Google.');
+            }
+
+            // Llogari lokale e paverifikuar: mos e lidh Google derisa emaili te verifikohet
+            if (!(int)$byEmail['email_verified'] && empty($byEmail['google_id'])) {
+                google_fail('Kjo llogari ekziston por emaili nuk eshte verifikuar. Verifikoje fillimisht me linkun nga emaili (ose dergo perseri nga faqja Login).');
             }
 
             // Lidh Google ID me llogarine ekzistuese
@@ -286,4 +304,4 @@ try {
 } catch (mysqli_sql_exception $e) {
     error_log('Google login error: ' . $e->getMessage());
     google_fail('Diqka shkoi gabim. Provo perseri.');
-}   
+}

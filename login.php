@@ -14,6 +14,7 @@ if (!empty($_SESSION['user_id'])) {
 $errors  = []; // array per te ruajtur gabimet
 $success = ''; // mesazh suksesi nga signup.php
 $old_email = ''; // variabla per te mbajtur emailin e futur ne rast gabimi
+$needs_verify = false; // true nese passwordi eshte sakte por emaili s'eshte verifikuar
 
 // Flash nga signup (mesazh suksesi)
 if (!empty($_SESSION['flash_success'])) {
@@ -51,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 // Kerko user-in ne databaze
                 $stmt = $conn->prepare(
-                    "SELECT id, username, password FROM regjistrimi WHERE email = ? LIMIT 1"
+                    "SELECT id, username, password, email_verified, google_id FROM regjistrimi WHERE email = ? LIMIT 1"
                 );
                 $stmt->bind_param("s", $email);
                 $stmt->execute();
@@ -60,7 +61,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->close();
 
                 // Verifiko passwordin
-                if ($user && password_verify($password, $user['password'])) {
+                $passwordOk = $user && password_verify($password, $user['password']);
+
+                // Passwordi sakte, por emaili s'eshte verifikuar (llogarite me Google llogariten te verifikuara)
+                if ($passwordOk && !(int)$user['email_verified'] && empty($user['google_id'])) {
+                    $needs_verify = true;
+                    $errors[] = 'Emaili yt nuk eshte verifikuar ende. Kontrollo inbox-in (edhe spam) per linkun e verifikimit.';
+
+                } elseif ($passwordOk) {
 
                     // Rigjenero session ID (mbrojtje session fixation)
                     session_regenerate_id(true);
@@ -96,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - To-Do List</title>
+    <title>Login - TaskStack</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -141,6 +149,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <button type="submit">Login</button>
         </form>
+
+        <?php if ($needs_verify): ?>
+            <p><a href="resend_verification.php">Dergo perseri emailin e verifikimit</a></p>
+        <?php endif; ?>
+        <p><a href="forgot_password.php">Harrove passwordin?</a></p>
 
         <div class="auth-divider"><span>ose</span></div>
 
