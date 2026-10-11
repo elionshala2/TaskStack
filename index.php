@@ -100,6 +100,68 @@ $username   = $_SESSION['username'] ?? ''; // ruan username nese useri eshte i k
         <div><strong>0 &euro;</strong><span>cmimi</span></div>
     </section>
 
+    <!-- ================= SHOWCASE ================= -->
+    <section class="section showcase">
+        <div class="showcase-text">
+            <p class="eyebrow">Brenda aplikacionit</p>
+            <h2 class="section-title">Gjithcka ne nje pamje</h2>
+            <p class="section-sub">Dashboard-i te tregon statistikat, progresin dhe detyrat e tua ne nje vend, pa dritare shtese.</p>
+
+            <ul class="check-list">
+                <li>Statistika per detyrat e kryera, ne pritje dhe te vonuara</li>
+                <li>Shirit progresi qe mbushet sa here qe perfundon nje detyre</li>
+                <li>Kategori me ngjyra dhe filtra te shpejte</li>
+                <li>Kerkim ne te gjitha detyrat</li>
+            </ul>
+        </div>
+
+        <!-- pamje e madhe e dashboard-it (vetem dekor) -->
+        <div class="preview showcase-mock" aria-hidden="true">
+            <div class="preview-top">
+                <i></i><i></i><i></i>
+                <span>Dashboard</span>
+            </div>
+
+            <div class="mock-stats">
+                <div class="stat"><div class="stat-num">12</div><div class="stat-label">Gjithsej</div></div>
+                <div class="stat"><div class="stat-num">5</div><div class="stat-label">Ne pritje</div></div>
+                <div class="stat is-danger"><div class="stat-num">2</div><div class="stat-label">Te vonuara</div></div>
+                <div class="stat is-good"><div class="stat-num">7</div><div class="stat-label">Te kryera</div></div>
+            </div>
+
+            <div class="preview-progress">
+                <div class="progress"><span style="width: 58%"></span></div>
+                <span><strong>58%</strong> e kryer</span>
+            </div>
+
+            <div class="mock-pills">
+                <span class="mock-pill" style="--cat: #7c3aed"><i></i>Shkolle <b>5</b></span>
+                <span class="mock-pill" style="--cat: #22c55e"><i></i>Sport <b>3</b></span>
+                <span class="mock-pill" style="--cat: #06b6d4"><i></i>Projekte <b>3</b></span>
+                <span class="mock-pill" style="--cat: #f59e0b"><i></i>Inbox <b>1</b></span>
+            </div>
+
+            <div class="mock-task" style="--c: var(--red)">
+                <span class="mock-check"></span>
+                <span class="mock-text">Projekti i informatikes</span>
+                <span class="mock-due late">Vonuar</span>
+                <span class="priority priority-high">Larte</span>
+            </div>
+            <div class="mock-task" style="--c: var(--yellow)">
+                <span class="mock-check"></span>
+                <span class="mock-text">Lexo kapitullin 4</span>
+                <span class="mock-due">Neser</span>
+                <span class="priority priority-medium">Mesatar</span>
+            </div>
+            <div class="mock-task done" style="--c: var(--text-dim)">
+                <span class="mock-check">&#10003;</span>
+                <span class="mock-text">Bej detyrat e matematikes</span>
+                <span class="mock-due">Sot</span>
+                <span class="priority priority-low">Ulet</span>
+            </div>
+        </div>
+    </section>
+
     <!-- ================= SI FUNKSIONON ================= -->
     <section class="section">
         <h2 class="section-title">Si funksionon?</h2>
@@ -121,48 +183,80 @@ $username   = $_SESSION['username'] ?? ''; // ruan username nese useri eshte i k
         </div>
     </section>
 
-    <!-- ================= FEATURES ================= -->
+    <!-- ================= PER KE ESHTE ================= -->
     <section class="section">
-        <h2 class="section-title">Pse te zgjedhesh ne?</h2>
-        <p class="section-sub">Gjithe ajo qe te duhet per produktivitet, ne nje vend.</p>
+        <h2 class="section-title">Per kedo qe po punon</h2>
+        <p class="section-sub">Nga shkolla te puna dhe jeta e perditshme, TaskStack pershtatet me ritmin tend.</p>
 
         <div class="features-grid">
 
             <div class="feature-card">
-                <div class="feature-icon">&#9889;</div>
-                <h3>I shpejte</h3>
-                <p>Faqja hapet ne me pak se 2 sekonda. Gjithmone.</p>
+                <div class="feature-icon">&#127891;</div>
+                <h3>Per nxenesit dhe studentet</h3>
+                <p>Mbaj gjurme te detyrave, projekteve dhe provimeve para se te afrohet afati.</p>
+                <ul class="usecase-tasks">
+                    <li><i style="--cat: #7c3aed"></i>Detyra e matematikes</li>
+                    <li><i style="--cat: #06b6d4"></i>Projekti i informatikes</li>
+                    <li><i style="--cat: #f59e0b"></i>Lexo kapitullin 4</li>
+                </ul>
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">&#128274;</div>
-                <h3>I sigurt</h3>
-                <p>Password te enkriptuara, mbrojtje nga SQLi, XSS dhe CSRF. Askush tjeter nuk i sheh detyrat e tua.</p>
+                <div class="feature-icon">&#128188;</div>
+                <h3>Per punen</h3>
+                <p>Organizo takimet, afatet dhe punet qe nuk duhet te pritojne.</p>
+                <ul class="usecase-tasks">
+                    <li><i style="--cat: #ef4444"></i>Dergo raportin javor</li>
+                    <li><i style="--cat: #06b6d4"></i>Takim me ekipin</li>
+                    <li><i style="--cat: #f59e0b"></i>Pergjigju email-eve</li>
+                </ul>
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">&#128241;</div>
-                <h3>Responsive</h3>
-                <p>Punon ne laptop, tablet dhe telefon pa problem.</p>
+                <div class="feature-icon">&#127968;</div>
+                <h3>Per jeten e perditshme</h3>
+                <p>Blerjet, sporti dhe pagesat e muajit, ne nje liste qe nuk te harrohet.</p>
+                <ul class="usecase-tasks">
+                    <li><i style="--cat: #22c55e"></i>Trajnimi i ores 18:00</li>
+                    <li><i style="--cat: #f59e0b"></i>Paguaj faturen e internetit</li>
+                    <li><i style="--cat: #7c3aed"></i>Blej ushqime</li>
+                </ul>
             </div>
 
-            <div class="feature-card">
-                <div class="feature-icon">&#127919;</div>
-                <h3>Prioritete</h3>
-                <p>Cakto prioritetin: low, medium ose high. Me te rendesishmet dalin gjithmone lart.</p>
-            </div>
+        </div>
+    </section>
 
-            <div class="feature-card">
-                <div class="feature-icon">&#128193;</div>
-                <h3>Kategori me ngjyra</h3>
-                <p>Ndaj detyrat ne shkolle, sport, projekte dhe zgjidh ngjyren qe te pelqen.</p>
-            </div>
+    <!-- ================= FAQ ================= -->
+    <section class="section">
+        <h2 class="section-title">Pyetje te shpeshta</h2>
+        <p class="section-sub">Gjithcka qe duhet te dish para se te fillosh.</p>
 
-            <div class="feature-card">
-                <div class="feature-icon">&#128197;</div>
-                <h3>Afate kohore</h3>
-                <p>Detyrat e vonuara shfaqen me te kuqe, qe te mos te iku asgje.</p>
-            </div>
+        <div class="faq">
+
+            <details class="faq-item">
+                <summary>A eshte TaskStack falas?</summary>
+                <p>Po. Nuk ke nevoje per kartele dhe nuk ka reklama.</p>
+            </details>
+
+            <details class="faq-item">
+                <summary>A mund te hyj me Google?</summary>
+                <p>Po. Mund te krijosh llogari ose te hysh me nje klik me Google, pa pasur nevoje per password te ri. Nese preferon, mund te regjistrohesh edhe me email dhe password.</p>
+            </details>
+
+            <details class="faq-item">
+                <summary>A jane detyrat e mia te sigurta?</summary>
+                <p>Password-et ruhen te enkriptuara dhe formularet kane mbrojtje nga sulmet e zakonshme (SQLi, XSS dhe CSRF). Detyrat i sheh vetem ti.</p>
+            </details>
+
+            <details class="faq-item">
+                <summary>Si i ndaj dhe i gjej detyrat?</summary>
+                <p>Cdo detyre ka kategori me ngjyre, prioritet (low, medium ose high) dhe afat. Ne dashboard mund te kerkosh dhe te filtrosh sipas statusit ose kategorise.</p>
+            </details>
+
+            <details class="faq-item">
+                <summary>Cfare ndodh me detyrat e vonuara?</summary>
+                <p>Kur afati kalon, detyra shfaqet me te kuqe, qe te dish menjehere cfare ka mbetur prapa.</p>
+            </details>
 
         </div>
     </section>

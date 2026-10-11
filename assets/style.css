@@ -742,6 +742,7 @@ select option {
     text-align: left;
 }
 
+/* top: 40px = padding-i i kartes, qe badge-i te perkthehet me titullin (Login / Signup) */
 .auth-side {
     position: sticky;
     top: 88px;
@@ -777,14 +778,16 @@ select option {
     color: var(--text-soft);
 }
 
-.auth-points {
+.auth-points,
+.check-list {
     display: grid;
     gap: 10px;
     margin: 0 0 36px;
     list-style: none;
 }
 
-.auth-points li {
+.auth-points li,
+.check-list li {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -792,7 +795,8 @@ select option {
     color: var(--text-soft);
 }
 
-.auth-points li::before {
+.auth-points li::before,
+.check-list li::before {
     content: '\2713';
     display: flex;
     flex-shrink: 0;
@@ -2013,6 +2017,202 @@ a.task-cat .dot {
     max-width: 480px;
     margin: 0 auto 28px;
     font-size: 16px;
+    color: var(--text-soft);
+}
+
+
+/* ---------- Showcase (pamje e madhe e dashboard-it) ---------- */
+.showcase {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    align-items: center;
+    gap: 56px;
+    text-align: left;
+}
+
+.showcase .section-sub {
+    margin-left: 0;
+    margin-bottom: 28px;
+}
+
+.showcase .check-list {
+    margin: 0;
+}
+
+.showcase-mock {
+    max-width: none;
+    transform: none;
+}
+
+.showcase-mock:hover {
+    transform: translateY(-4px);
+}
+
+.mock-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.mock-stats .stat {
+    padding: 10px 12px;
+}
+
+.mock-stats .stat-num {
+    font-size: 22px;
+}
+
+.mock-stats .stat-label {
+    font-size: 11px;
+}
+
+.mock-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.mock-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-soft);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+}
+
+.mock-pill i {
+    width: 8px;
+    height: 8px;
+    background: var(--cat);
+    border-radius: 50%;
+}
+
+.mock-pill b {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+}
+
+.mock-due {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.mock-due.late {
+    font-weight: 600;
+    color: var(--red);
+}
+
+/* ---------- Karta per kedo perdorues (shembuj detyrash) ---------- */
+.usecase-tasks {
+    display: grid;
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 16px;
+    list-style: none;
+    border-top: 1px solid var(--border);
+}
+
+.usecase-tasks li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-soft);
+}
+
+.usecase-tasks i {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    background: var(--cat);
+    border-radius: 50%;
+}
+
+@media (max-width: 900px) {
+    .showcase {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+}
+
+@media (max-width: 600px) {
+    .mock-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- FAQ (pyetje te shpeshta) ---------- */
+.faq {
+    display: grid;
+    gap: 12px;
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.faq-item:hover {
+    border-color: var(--border-hi);
+}
+
+.faq-item[open] {
+    background: var(--surface-2);
+    border-color: var(--border-hi);
+}
+
+.faq-item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 22px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+.faq-item summary::-webkit-details-marker {
+    display: none;
+}
+
+/* shigjeta qe rrotullohet kur hapet */
+.faq-item summary::after {
+    content: '';
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    margin-right: 2px;
+    border-right: 2px solid var(--text-dim);
+    border-bottom: 2px solid var(--text-dim);
+    transform: rotate(45deg);
+    transition: transform 0.25s var(--ease), border-color 0.2s;
+}
+
+.faq-item[open] summary::after {
+    border-color: var(--accent-2);
+    transform: rotate(-135deg);
+}
+
+.faq-item p {
+    padding: 0 22px 20px;
+    font-size: 14px;
+    line-height: 1.7;
     color: var(--text-soft);
 }
 
