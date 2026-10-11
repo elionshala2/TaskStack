@@ -23,18 +23,6 @@ Nje web aplikacion per menaxhimin e detyrave me autentifikim perdoruesi, i ndert
 
 Mos e commit-o `.env` kurre (eshte ne `.gitignore`). Nese e ke ndare me dike, ndrysho sekretet.
 
-## Perditesim i nje instalimi ekzistues
-
-Nese e ke databazen krijuar me nje version me te vjeter, ekzekuto kete ne phpMyAdmin (tab SQL), para se te ngarkosh kodin e ri:
-
-```sql
-USE todolist;
-ALTER TABLE regjistrimi
-    ADD COLUMN session_version INT UNSIGNED NOT NULL DEFAULT 1 AFTER google_id;
-```
-
-Pas perditesimit, te gjithe userat kyqen perseri nje here.
-
 ## Kerkesat
 
 - Faqja Kryesore `index.php`, qe e fton perdoruesin me kriju llogari
