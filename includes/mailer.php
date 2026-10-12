@@ -143,7 +143,7 @@ function recent_token_exists($conn, int $user_id, string $type): bool {
 }
 
 // ---------------------------------------------------------------
-// Limit per IP (qe dikush te mos e perdore formen per te bombarduar inbox-e)
+// Limit per IP (qe dikush te mos e perdore formen per te derguar spam)
 // ---------------------------------------------------------------
 
 function mail_requests_count($conn, string $ip): int {
@@ -192,7 +192,7 @@ function email_template(string $heading, string $intro, string $btn_text, string
         . '<tr><td style="font-size:18px;font-weight:700;color:#111827;padding:18px 0 8px;">' . $heading . '</td></tr>'
         . '<tr><td style="font-size:15px;line-height:1.6;color:#374151;padding-bottom:22px;">' . $intro . '</td></tr>'
         . '<tr><td style="padding-bottom:22px;"><a href="' . $href . '" style="display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 24px;border-radius:10px;">' . $btn_text . '</a></td></tr>'
-        . '<tr><td style="font-size:12px;line-height:1.6;color:#6b7280;">Nese butoni nuk punon, kopjo kete link ne shfletues:<br><span style="word-break:break-all;">' . $href . '</span></td></tr>'
+        . '<tr><td style="font-size:12px;line-height:1.6;color:#6b7280;">Nëse butoni nuk punon, kopjo kete link ne shfletues:<br><span style="word-break:break-all;">' . $href . '</span></td></tr>'
         . '<tr><td style="font-size:12px;line-height:1.6;color:#6b7280;padding-top:16px;">' . $note . '</td></tr>'
         . '</table></td></tr></table></body></html>';
 }
@@ -206,10 +206,10 @@ function send_verification_email($conn, int $user_id, string $email, string $use
     }
 
     $link  = app_url() . '/verify.php?token=' . $token;
-    $intro = "Pershendetje $username, faleminderit qe u regjistrove ne TaskStack. Kliko butonin per te verifikuar emailin tend.";
-    $note  = 'Linku vlen 24 ore. Nese nuk e ke krijuar ti kete llogari, injoroje kete email.';
+    $intro = "Përshëndetje $username, faleminderit që u regjistrove ne TaskStack. Kliko butonin për të verifikuar emailin tend.";
+    $note  = 'Linku vlen për 24 orë. Nëse nuk e ke krijuar ti kete llogari, injoroje kete email.';
 
-    $html = email_template('Verifiko emailin tend', $intro, 'Verifiko emailin', $link, $note);
+    $html = email_template('Verifiko emailin tënd', $intro, 'Verifiko emailin', $link, $note);
     $text = "$intro\n\n$link\n\n$note";
 
     return send_mail($email, 'Verifiko emailin - TaskStack', $html, $text);
@@ -224,8 +224,8 @@ function send_reset_email($conn, int $user_id, string $email, string $username):
     }
 
     $link  = app_url() . '/reset_password.php?token=' . $token;
-    $intro = "Pershendetje $username, morem nje kerkese per te ndryshuar passwordin e llogarise tende TaskStack. Kliko butonin per te vendosur nje password te ri.";
-    $note  = 'Linku vlen 1 ore dhe perdoret vetem nje here. Nese nuk e ke kerkuar ti kete, injoroje kete email, passwordi yt nuk ndryshon.';
+    $intro = "ërshëndetje $username, morëm një kërkesë për të ndryshuar passwordin e llogarise tënde në platformën TaskStack. Kliko butonin për të vendosur një password të ri.";
+    $note  = 'Linku vlen për 1 orë dhe perdoret vetem një herë. Nëse nuk e ke kerkuar ti kete, injoroje kete email, passwordi yt nuk ndryshon.';
 
     $html = email_template('Rivendos passwordin', $intro, 'Vendos password te ri', $link, $note);
     $text = "$intro\n\n$link\n\n$note";
@@ -256,8 +256,8 @@ function send_email_change_email($conn, int $user_id, string $new_email, string 
     }
 
     $link  = app_url() . '/confirm_email.php?token=' . $token;
-    $intro = "Pershendetje $username, kerkove ta ndryshosh emailin e llogarise TaskStack ne kete adrese. Kliko butonin per ta konfirmuar.";
-    $note  = 'Linku vlen 1 ore. Nese nuk e ke kerkuar ti kete, injoroje kete email, asgje nuk ndryshon.';
+    $intro = "Përshëndetje $username, morëm një kërkesë për të ndryshuar emailin e llogarise tënde në platformën TaskStack në këtë adrese. Kliko butonin për të konfirmuar.";
+    $note  = 'Linku vlen 1 ore. Nëse nuk e ke kerkuar ti kete, injoroje kete email, asgje nuk ndryshon.';
 
     $html = email_template('Konfirmo emailin e ri', $intro, 'Konfirmo emailin', $link, $note);
     $text = "$intro\n\n$link\n\n$note";
@@ -276,9 +276,9 @@ function send_email_changed_notice($conn, int $user_id, string $old_email, strin
 
     $link  = app_url() . '/revert.php?token=' . $token;
     $when  = date('d.m.Y H:i');
-    $intro = "Pershendetje $username, me $when emaili i llogarise tende TaskStack u ndryshua nga kjo adrese ne " . mask_email($new_email) . ". "
-           . "Nese ke qene ti, nuk duhet te besh asgje. Nese NUK ke qene ti, kliko butonin per ta kthyer emailin e meparshem.";
-    $note  = 'Linku vlen 12 ore. Nese nuk e ke bere ti kete ndryshim, ndrysho edhe passwordin menjehere.';
+    $intro = "Përshëndetje $username, më $when emaili i llogarise tende në platformën TaskStack u ndryshua nga kjo adrese ne " . mask_email($new_email) . ". "
+           . "Nëse ke qene ti, nuk duhet te besh asgje. Nëse NUK ke qene ti, kliko butonin per ta kthyer emailin e meparshem.";
+    $note  = 'Linku vlen 12 ore. Nëse nuk e ke bere ti kete ndryshim, ndrysho edhe passwordin menjehere.';
 
     $html = email_template('Emaili i llogarise u ndryshua', $intro, 'Anulo ndryshimin', $link, $note);
     $text = "$intro\n\n$link\n\n$note";
@@ -300,8 +300,8 @@ function send_password_changed_notice($conn, int $user_id, string $email, string
     $link  = app_url() . '/revert.php?token=' . $token;
     $when  = date('d.m.Y H:i');
     $intro = "Pershendetje $username, me $when passwordi i llogarise tende TaskStack u ndryshua permes \"Harrova passwordin\". "
-           . "Nese ke qene ti, nuk duhet te besh asgje. Nese NUK ke qene ti, kliko butonin per ta kthyer passwordin e meparshem.";
-    $note  = 'Linku vlen 12 ore. Nese nuk e ke bere ti kete ndryshim, ndrysho edhe passwordin e emailit tend.';
+           . "Nëse ke qene ti, nuk duhet te besh asgje. Nëse NUK ke qene ti, kliko butonin per ta kthyer passwordin e meparshem.";
+    $note  = 'Linku vlen 12 ore. Nëse nuk e ke bërë ti këtë ndryshim, ndrysho edhe passwordin e emailit tend.';
 
     $html = email_template('Passwordi u ndryshua', $intro, 'Anulo ndryshimin', $link, $note);
     $text = "$intro\n\n$link\n\n$note";

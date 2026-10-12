@@ -95,7 +95,7 @@ if (!empty($_SESSION['flash_error'])) {
     <div class="dashboard-header">
         <div>
             <p class="eyebrow">Organizimi</p>
-            <h1>Kategorite e mia</h1>
+            <h1>Kategoritë e mia</h1>
         </div>
         <a href="tasks/add_category.php" class="btn">+ Shto kategori</a>
     </div>
@@ -111,8 +111,8 @@ if (!empty($_SESSION['flash_error'])) {
     <?php if (empty($categories)): ?>
         <div class="empty-state">
             <p class="empty-icon">&#128193;</p>
-            <p>Nuk ka kategori ende.</p>
-            <p><a href="tasks/add_category.php">Shto kategorine e pare</a></p>
+            <p>Nuk ka kategori.</p>
+            <p><a href="tasks/add_category.php">Shto kategorinë e parë</a></p>
         </div>
     <?php else: ?>
         <ul class="cat-list">
@@ -162,7 +162,7 @@ if (!empty($_SESSION['flash_error'])) {
                     <div class="cat-panel" id="cat-panel-<?= $cid ?>">
                         <div class="cat-panel-inner">
                             <?php if ($count === 0): ?>
-                                <div class="cat-empty"><span>Nuk ka detyra ne kete kategori.</span></div>
+                                <div class="cat-empty"><span>Nuk ka detyrë në këtë kategori.</span></div>
                             <?php else: ?>
                                 <ul class="cat-tasks">
                                     <?php foreach ($cat_tasks as $t):

@@ -172,9 +172,9 @@ if (!empty($_SESSION['flash_error'])) {
 
 // pershendetje sipas ores
 $hour = (int)date('G');
-if ($hour < 12)      { $greet = 'Miremengjes'; }
-elseif ($hour < 18)  { $greet = 'Mirdita'; }
-else                 { $greet = 'Mirembrema'; }
+if ($hour < 12)      { $greet = 'Mirëmëngjesi'; }
+elseif ($hour < 18)  { $greet = 'Mirëdita'; }
+else                 { $greet = 'Mirëmbrëma'; }
 ?>
 <!DOCTYPE html>
 <html lang="sq">
@@ -197,7 +197,7 @@ else                 { $greet = 'Mirembrema'; }
             <p class="eyebrow"><?= e($greet) ?>, <?= e($username) ?></p>
             <h1>Detyrat e mia</h1>
         </div>
-        <a href="tasks/add_task.php" class="btn">+ Shto detyre</a>
+        <a href="tasks/add_task.php" class="btn">+ Shto detyrë</a>
     </div>
 
     <?php if ($flash): ?>
@@ -220,11 +220,11 @@ else                 { $greet = 'Mirembrema'; }
             </div>
             <div class="stat <?= $stats['completed'] > 0 ? 'is-good' : '' ?>">
                 <div class="stat-num"><?= $stats['completed'] ?></div>
-                <div class="stat-label">Te kryera</div>
+                <div class="stat-label">Të kryera</div>
             </div>
             <div class="stat <?= $stats['overdue'] > 0 ? 'is-danger' : '' ?>">
                 <div class="stat-num"><?= $stats['overdue'] ?></div>
-                <div class="stat-label">Te vonuara</div>
+                <div class="stat-label">Të vonuara</div>
             </div>
         </div>
         <div class="progress-wrap">
@@ -239,15 +239,15 @@ else                 { $greet = 'Mirembrema'; }
             <?php if ($filter !== 'all'): ?><input type="hidden" name="filter" value="<?= e($filter) ?>"><?php endif; ?>
             <?php if ($cat_filter !== 'all'): ?><input type="hidden" name="cat" value="<?= e($cat_filter) ?>"><?php endif; ?>
             <input type="text" name="q" class="search-input" maxlength="100"
-                   placeholder="Kerko nje detyre..." value="<?= e($q) ?>">
+                   placeholder="Kërko një detyrë..." value="<?= e($q) ?>">
         </form>
 
         <div class="toolbar-row">
             <span class="toolbar-label">Statusi</span>
             <div class="filters">
-                <a href="<?= e(dash_url('all', $cat_filter, $q)) ?>"       class="<?= $filter === 'all'       ? 'active' : '' ?>">Te gjitha<span class="n"><?= $stats['total'] ?></span></a>
+                <a href="<?= e(dash_url('all', $cat_filter, $q)) ?>"       class="<?= $filter === 'all'       ? 'active' : '' ?>">Të gjitha<span class="n"><?= $stats['total'] ?></span></a>
                 <a href="<?= e(dash_url('active', $cat_filter, $q)) ?>"    class="<?= $filter === 'active'    ? 'active' : '' ?>">Aktive<span class="n"><?= $stats['active'] ?></span></a>
-                <a href="<?= e(dash_url('completed', $cat_filter, $q)) ?>" class="<?= $filter === 'completed' ? 'active' : '' ?>">Te kryera<span class="n"><?= $stats['completed'] ?></span></a>
+                <a href="<?= e(dash_url('completed', $cat_filter, $q)) ?>" class="<?= $filter === 'completed' ? 'active' : '' ?>">Të kryera<span class="n"><?= $stats['completed'] ?></span></a>
             </div>
 
             <?php if ($filters_active): ?>
@@ -260,7 +260,7 @@ else                 { $greet = 'Mirembrema'; }
                 <span class="toolbar-label">Kategoria</span>
                 <div class="cat-filters">
                     <a href="<?= e(dash_url($filter, 'all', $q)) ?>"
-                       class="cat-pill <?= $cat_filter === 'all' ? 'active' : '' ?>">Te gjitha</a>
+                       class="cat-pill <?= $cat_filter === 'all' ? 'active' : '' ?>">Të gjitha</a>
 
                     <?php foreach ($categories as $cid => $cat): ?>
                         <a href="<?= e(dash_url($filter, (string)$cid, $q)) ?>"
@@ -289,12 +289,12 @@ else                 { $greet = 'Mirembrema'; }
         <div class="empty-state">
             <?php if ($filters_active): ?>
                 <p class="empty-icon">&#128269;</p>
-                <p>Asnje detyre nuk perputhet me filtrat.</p>
+                <p>Asnjë detyrë nuk përputhet me filtrat..</p>
                 <p><a href="dashboard.php">Pastro filtrat</a></p>
             <?php else: ?>
                 <p class="empty-icon">&#128237;</p>
-                <p>Nuk ke asnje detyre ende.</p>
-                <p><a href="tasks/add_task.php">Shto detyren e pare</a></p>
+                <p>Nuk ka asnjë detyrë.</p>
+                <p><a href="tasks/add_task.php">Shto detyrën e parë</a></p>
             <?php endif; ?>
         </div>
     <?php else: ?>

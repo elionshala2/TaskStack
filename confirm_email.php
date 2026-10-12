@@ -97,7 +97,7 @@ $logged_in = !empty($_SESSION['user_id']);
         <h1>Konfirmo emailin</h1>
 
         <?php if ($state === 'form'): ?>
-            <p class="auth-sub">Konfirmo qe emaili i llogarise TaskStack te behet <strong><?= e($row['payload']) ?></strong>.</p>
+            <p class="auth-sub">Konfirmo që emaili i llogarise në platformën TaskStack të bëhet <strong><?= e($row['payload']) ?></strong>.</p>
 
             <?php if (!empty($errors)): ?>
                 <div class="alert error">
@@ -112,18 +112,18 @@ $logged_in = !empty($_SESSION['user_id']);
             </form>
 
         <?php elseif ($state === 'done'): ?>
-            <div class="alert success"><p>Emaili u ndryshua me sukses! Perdore ate per t'u kyqur nga tani.</p></div>
+            <div class="alert success"><p>Emaili u ndryshua me sukses! Përdore atë për t'u kyqur nga tani.</p></div>
             <p><a href="<?= $logged_in ? 'settings.php' : 'login.php' ?>"><?= $logged_in ? 'Shko te Settings' : 'Shko te Login' ?> &rarr;</a></p>
 
         <?php elseif ($state === 'taken'): ?>
-            <div class="alert error"><p>Ky email perdoret tashme nga nje llogari tjeter, ndaj nuk mund te ndryshohet.</p></div>
+            <div class="alert error"><p>Ky email është i përdorur nga një llogari tjeter, ndaj nuk mund të ndryshohet.</p></div>
             <p><a href="settings.php">&larr; Kthehu te Settings</a></p>
 
         <?php elseif ($state === 'error'): ?>
-            <div class="alert error"><p>Diqka shkoi gabim. Provo perseri me vone.</p></div>
+            <div class="alert error"><p>Diqka shkoi gabim. Provo përsëri me vone.</p></div>
 
         <?php else: ?>
-            <div class="alert error"><p>Ky link eshte i pavlefshem, ka skaduar ose eshte perdorur tashme.</p></div>
+            <div class="alert error"><p>Ky link është i pavlefshem, ka skaduar ose është perdorur tashme.</p></div>
             <p><a href="settings.php">&larr; Kthehu te Settings</a></p>
         <?php endif; ?>
     </div>

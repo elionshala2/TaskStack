@@ -41,7 +41,7 @@ $task_pages = ['dashboard.php', 'add_task.php', 'edit_task.php']; // faqet e tas
 
     <div class="nav-links">
         <?php if ($isLoggedIn): ?> <!-- nese useri eshte i kyqur i tregon edhe linqet e dashboardit edhe te kategorive -->
-            <span class="nav-user">Pershendetje, <strong><?= e($username) ?></strong></span><!--nese perdoruesi eshte i kyqur e tregon emrin e tij ketu-->
+            <span class="nav-user">Përshëndetje, <strong><?= e($username) ?></strong></span><!--nese perdoruesi eshte i kyqur e tregon emrin e tij ketu-->
             <a href="<?= $prefix ?>settings.php"
                class="btn-outline <?= $current === 'settings.php' ? 'btn-active' : '' ?>">Settings</a>
             <a href="<?= $prefix ?>logout.php" class="btn-outline">Logout</a>

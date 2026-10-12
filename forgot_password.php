@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // mesazh i njejte gjithmone (nuk zbulon nese emaili ekziston)
-            $success = 'Nese ky email ekziston, do te marresh nje link per te vendosur password te ri (kontrollo edhe spam). Linku vlen 1 ore.';
+            $success = 'Nëse ky email ekziston, do të marrësh një link për ta vendosur passwordin e ri (kontrollo edhe spam). Linku vlen 1 ore.';
             $old_email = '';
         }
     }
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="auth-box">
         <h1>Harrova passwordin</h1>
-        <p class="auth-sub">Shkruaj emailin e llogarise dhe te dergojme nje link per te vendosur password te ri.</p>
+        <p class="auth-sub">Shkruaj emailin e llogarisë dhe të dergojme një link për të vendosur password te ri.</p>
 
         <?php if ($success): ?>
             <div class="alert success"><p><?= e($success) ?></p></div>
@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="email" name="email" value="<?= e($old_email) ?>"
                    placeholder="name@example.com" autocomplete="email" required>
 
-            <button type="submit">Dergo linkun</button>
+            <button type="submit">Dërgo linkun</button>
         </form>
 
         <p><a href="login.php">&larr; Kthehu te Login</a></p>

@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="auth-box">
         <h1>Login</h1>
-        <p class="auth-sub">Mire se u ktheve. Hyr per te pare detyrat e tua.</p>
+        <p class="auth-sub">Mirë se u ktheve. Hyr për të parë detyrat e tua.</p>
 
         <?php if ($success): ?>
             <div class="alert success"><p><?= e($success) ?></p></div>
@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <?php if ($needs_verify): ?>
-            <p><a href="resend_verification.php">Dergo perseri emailin e verifikimit</a></p>
+            <p><a href="resend_verification.php">Dergo përseri emailin e verifikimit</a></p>
         <?php endif; ?>
         <p><a href="forgot_password.php">Harrove passwordin?</a></p>
 
@@ -164,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Vazhdo me Google
         </a>
 
-        <p class="auth-legal">Duke vazhduar, pranon <a href="terms.php">Kushtet e Sherbimit</a> dhe <a href="privacy.php">Politiken e Privatesise</a>.</p>
+        <p class="auth-legal">Duke vazhduar, pranon <a href="terms.php">Kushtet e Shërbimit</a> dhe <a href="privacy.php">Politikën e Privatësisë</a>.</p>
 
         <p>Nuk ke llogari? <a href="signup.php">Regjistrohu</a></p>
         <p><a href="index.php">&larr; Kthehu ne faqen kryesore</a></p>
