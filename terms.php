@@ -59,8 +59,8 @@ session_start(); // navbar-i ka nevoje per sesionin
             <ul>
                 <li>Duhet te jesh te pakten <?= (int)$legal_min_age ?> vjec per te krijuar llogari.</li>
                 <li>Duhet te japesh te dhena te sakta dhe te mirembash llogarine tende te sigurt.</li>
-                <li>Cdo llogari lidhet me nje email te vetem. Duhet ta verifikosh emailin me linkun qe te dergojme para se te hysh me email dhe password, dhe duhet ta mbash emailin te arritshem, sepse aty te dergojme linqet e verifikimit, te rivendosjes se passwordit dhe njoftimet e sigurise.</li>
-                <li>Je pergjegjes per cdo veprim qe behet me llogarine tende, perfshire kyqjen me Google. Kur e lidh Google, emaili i llogarise zevendesohet me emailin e verifikuar te Google.</li>
+                <li>Cdo llogari lidhet me nje email te vetem. Duhet ta verifikosh emailin me linkun qe te dergojme para se te hysh me email dhe password, dhe duhet ta mbash emailin te arritshem, sepse aty te dergojme linqet e verifikimit, te rivendosjes se passwordit dhe njoftimet e sigurise. Llogarite e paverifikuara fshihen automatikisht pas 3 diteve. Nese dikush kyqet me Google me nje email qe ka nje regjistrim te paverifikuar, llogaria i kalon atij personi dhe passwordi i meparshem behet i pavlefshem.</li>
+                <li>Je pergjegjes per cdo veprim qe behet me llogarine tende, perfshire kyqjen me Google. Kur e lidh Google (kerkohet passwordi yt aktual), emaili i llogarise zevendesohet me emailin e verifikuar te Google dhe emaili i vjeter njoftohet.</li>
                 <li>Mos e ndaj passwordin me te tjere. Nese dyshon per perdorim te paautorizuar, ndrysho passwordin ose mbyll sesionet e tjera nga Settings, dhe na njofto menjehere.</li>
             </ul>
 

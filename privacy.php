@@ -61,14 +61,14 @@ session_start(); // navbar-i ka nevoje per sesionin
                 <li>daten kur eshte krijuar llogaria.</li>
             </ul>
 
-            <p><strong>Kyqja me Google.</strong> Nese zgjedh "Vazhdo me Google" ose e lidh Google nga Settings, marrim nga Google emailin tend (dhe nese eshte i verifikuar), emrin dhe nje identifikues unik te llogarise Google. Nuk e marrim dhe nuk e shohim passwordin e Google. Emri perdoret vetem per te propozuar username-in fillestar. Kur e lidh Google me nje llogari ekzistuese, emaili i llogarise zevendesohet me emailin e verifikuar te Google.</p>
+            <p><strong>Kyqja me Google.</strong> Nese zgjedh "Vazhdo me Google" ose e lidh Google nga Settings, marrim nga Google emailin tend (dhe nese eshte i verifikuar), emrin dhe nje identifikues unik te llogarise Google. Nuk e marrim dhe nuk e shohim passwordin e Google. Emri perdoret vetem per te propozuar username-in fillestar. Kur e lidh Google me nje llogari ekzistuese, kerkohet passwordi yt aktual, emaili i llogarise zevendesohet me emailin e verifikuar te Google dhe emaili i vjeter njoftohet (me mundesi per ta anuluar ndryshimin). Per llogarite qe hyjne vetem me Google, e perdorim Google edhe per te verifikuar perseri identitetin tend para veprimeve te ndjeshme (vendosja e passwordit ose fshirja e llogarise).</p>
 
             <p><strong>Permbajtja jote.</strong> Detyrat dhe kategorite qe krijon (titulli, pershkrimi, prioriteti, afati, statusi dhe ngjyra e kategorise).</p>
 
             <p><strong>Te dhena teknike.</strong></p>
             <ul>
-                <li>Adresen IP dhe oren e tentativave per kyqje, per konfirmim passwordi ne Settings dhe per kerkesat per email (verifikim, reset password). I perdorim vetem per te kufizuar tentativat e tepruara dhe per te mbrojtur llogarite, dhe nuk perdoren per profilizim.</li>
-                <li>Nje cookie sesioni dhe nje numer versioni te sesionit te ruajtur ne llogarine tende (shiko seksionin Cookies dhe sesionet).</li>
+                <li>Adresen IP, oren e tentativave dhe nje identifikues te llogarise (hash i emailit ose numri i llogarise) per tentativat per kyqje, per konfirmim passwordi ne Settings dhe per kerkesat per email (verifikim, reset password). I perdorim vetem per te kufizuar tentativat e tepruara dhe per te mbrojtur llogarite, dhe nuk perdoren per profilizim.</li>
+                <li>Nje cookie sesioni dhe nje numer versioni te sesionit te ruajtur ne llogarine tende (shiko seksionin Cookies dhe sesionet), si dhe, per llogarite vetem me Google, nje shenje e perkohshme ne sesion (5 minuta) qe tregon se e ke verifikuar identitetin me Google.</li>
                 <li>Tokene te perkohshem per linqet ne email (verifikim, reset password, ndryshim emaili, anulim ndryshimi). Ruhet vetem hash-i i tyre, jo tokeni vete, dhe skadojne brenda 1 ore deri 24 ore, sipas llojit.</li>
             </ul>
 
@@ -88,7 +88,8 @@ session_start(); // navbar-i ka nevoje per sesionin
                 <li>email verifikimi kur krijon llogari;</li>
                 <li>email per vendosje te passwordit te ri, kur e kerkon ti;</li>
                 <li>email konfirmimi kur ndryshon emailin;</li>
-                <li>njoftim sigurie kur ndryshon passwordi ose emaili i llogarise, me nje link per ta anuluar ndryshimin brenda 12 oreve nese nuk e ke bere ti.</li>
+                <li>njoftim sigurie kur ndryshon passwordi ose emaili i llogarise (perfshire kur lidhja e Google e ndryshon emailin), me nje link per ta anuluar ndryshimin brenda 12 oreve nese nuk e ke bere ti;</li>
+                <li>njoftim kur dikush provon te regjistrohet me emailin tend qe ka tashme llogari (mund ta injorosh nese nuk ke qene ti).</li>
             </ul>
             <p>Emailet dergohen permes nje ofruesi te sherbimit SMTP, i cili i perpunon adresen tende te emailit vetem per dergimin e tyre.</p>
 
@@ -111,7 +112,7 @@ session_start(); // navbar-i ka nevoje per sesionin
             <p>Marrim masa te arsyeshme per te mbrojtur te dhenat: passwordet ruhen te enkriptuara, kerkesat ndaj databazes jane te parametrizuara, formularet kane mbrojtje nga CSRF, tentativat e kyqjes jane te kufizuara, dhe faqet dergojne header-a sigurie (p.sh. Content-Security-Policy). Asnje sistem nuk eshte plotesisht i sigurt, prandaj perdor nje password te forte, mos e ndaj me askend dhe mbyll sesionet e tjera nese dyshon per perdorim te paautorizuar.</p>
 
             <h2 id="ruajtja">8. Ruajtja dhe fshirja e te dhenave</h2>
-            <p>I ruajme te dhenat sa kohe e ke llogarine aktive. Mund ta fshish vete llogarine ne cdo kohe nga Settings, ne seksionin "Fshi llogarine". Fshirja eshte e menjehershme dhe e pakthyeshme: hiqen llogaria, te gjitha detyrat dhe kategorite, si dhe tokenet e lidhur me te. Te dhenat teknike per kufizimin e tentativave (adresa IP dhe ora) nuk jane te lidhura me llogarine tende dhe perdoren vetem brenda dritares kohore te kufizimit (rreth 15 minuta).</p>
+            <p>I ruajme te dhenat sa kohe e ke llogarine aktive. Mund ta fshish vete llogarine ne cdo kohe nga Settings, ne seksionin "Fshi llogarine". Fshirja eshte e menjehershme dhe e pakthyeshme: hiqen llogaria, te gjitha detyrat dhe kategorite, si dhe tokenet e lidhur me te. Te dhenat teknike per kufizimin e tentativave (adresa IP, ora dhe identifikuesi i llogarise) perdoren per kufizim vetem brenda dritares kohore (rreth 15 minuta) dhe fshihen automatikisht pas rreth 1 dite. Llogarite qe nuk e verifikojne emailin brenda 3 diteve fshihen automatikisht, njesoj si tokenet e skaduar.</p>
 
             <h2 id="te-drejtat">9. Te drejtat e tua</h2>
             <p>Sipas ligjit te zbatueshem per mbrojtjen e te dhenave personale, mund te kesh te drejten te:</p>
