@@ -28,37 +28,6 @@ function load_user(mysqli $conn, int $user_id): ?array
     return $row ?: null;
 }
 
-// Verifikon passwordin aktual, duke perdorur te njejtin rate limiting si login-i
-function check_current_password(mysqli $conn, array $user, string $given, ?string &$err): bool
-{
-    $ip = client_ip();
-
-    if (login_attempts_count($conn, $ip) >= MAX_LOGIN_ATTEMPTS) {
-        $err = 'Shume tentativa te pasuksesshme. Provo perseri pas ' . LOGIN_WINDOW_MINUTES . ' minutash.';
-        return false;
-    }
-    if ($given === '' || !password_verify($given, $user['password'])) {
-        record_login_attempt($conn, $ip);
-        $err = 'Password-i aktual eshte i gabuar.';
-        return false;
-    }
-    clear_login_attempts($conn, $ip);
-    return true;
-}
-
-// Rregullat e passwordit (te njejta me signup.php)
-function password_errors(string $pw, string $cpw): array
-{
-    $errs = [];
-    if (strlen($pw) < 8 || !preg_match('/[A-Za-z]/', $pw) || !preg_match('/\d/', $pw)) {
-        $errs[] = 'Password: min 8 karaktere, te pakten 1 shkronje dhe 1 numer.';
-    }
-    if ($pw !== $cpw) {
-        $errs[] = 'Password-et nuk perputhen.';
-    }
-    return $errs;
-}
-
 $user = load_user($conn, $user_id);
 
 // nese llogaria nuk ekziston me (p.sh. u fshi nga nje tab tjeter)
@@ -70,6 +39,10 @@ if (!$user) {
 // Llogari vetem me Google = passwordi eshte i rastesishem, useri nuk e di
 $is_google_only = ($user['provider'] ?? 'local') === 'google';
 $old_username   = $user['username'];
+
+// Llogarite vetem me Google nuk kane password per ta konfirmuar veprimet e rrezikshme; ne vend te kesaj
+// duhet te verifikojne perseri me Google (vlen 5 minuta, vendoset nga google-callback.php)
+$reauth_ok = !empty($_SESSION['reauth_until']) && (int)$_SESSION['reauth_until'] >= time();
 $old_new_email  = ''; // qe emaili i shkruar mos te fshihet nese ka gabim
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -128,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ---------- 1b. Ndrysho emailin (konfirmohet me link ne emailin e ri) ----------
     } elseif ($action === 'email') {
 
-        $new_email     = trim($_POST['new_email'] ?? '');
+        $new_email     = mb_strtolower(trim($_POST['new_email'] ?? ''));
         $old_new_email = $new_email;
 
         if ($is_google_only) {
@@ -182,6 +155,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!check_current_password($conn, $user, $current, $err)) {
                 $errors['password'][] = $err;
             }
+        } elseif (!$reauth_ok) {
+            $errors['password'][] = 'Per siguri, verifiko fillimisht identitetin me Google (butoni "Verifiko me Google" me siper).';
         }
 
         foreach (password_errors($new, $confirm) as $pe) {
@@ -207,6 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->close();
 
                 $_SESSION['sv'] = (int)get_session_version($conn, $user_id); // sesioni aktual e merr versionin e ri
+                unset($_SESSION['reauth_until']); // verifikimi me Google perdoret vetem nje here
                 session_regenerate_id(true); // siguri pas ndryshimit te kredencialeve
 
                 $_SESSION['flash_success'] = $is_google_only
@@ -270,7 +246,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($is_google_only) {
             // pa password -> useri shkruan username-in per konfirmim
-            if (trim((string)($_POST['confirm_text'] ?? '')) !== $user['username']) {
+            if (!$reauth_ok) {
+                $errors['delete'][] = 'Per siguri, verifiko fillimisht identitetin me Google (butoni "Verifiko me Google" me siper).';
+            } elseif (trim((string)($_POST['confirm_text'] ?? '')) !== $user['username']) {
                 $errors['delete'][] = 'Shkruaj username-in tend saktesisht per te konfirmuar.';
             }
         } else {
@@ -442,6 +420,29 @@ $has_google   = !empty($user['google_id']);
             <?php endif; ?>
         </form>
 
+        <!-- ================= VERIFIKIMI ME GOOGLE (vetem llogari pa password) ================= -->
+        <?php if ($is_google_only): ?>
+            <form method="POST" action="google-callback.php" class="settings-card" id="reauth" novalidate>
+                <input type="hidden" name="csrf"   value="<?= e(csrf_token()) ?>">
+                <input type="hidden" name="action" value="reauth">
+
+                <div class="settings-head">
+                    <h2>Verifiko identitetin</h2>
+                    <?php if ($reauth_ok): ?>
+                        <p>Identiteti yt eshte verifikuar. Ke disa minuta per te vendosur password ose per te fshire llogarine.</p>
+                    <?php else: ?>
+                        <p>Per te vendosur password ose per te fshire llogarine, fillimisht verifiko me Google (vlen 5 minuta).</p>
+                    <?php endif; ?>
+                </div>
+
+                <?php if (!$reauth_ok): ?>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-outline">Verifiko me Google</button>
+                    </div>
+                <?php endif; ?>
+            </form>
+        <?php endif; ?>
+
         <!-- ================= PASSWORD ================= -->
         <form method="POST" class="settings-card" id="password-card" novalidate>
             <input type="hidden" name="csrf"   value="<?= e(csrf_token()) ?>">
@@ -472,14 +473,14 @@ $has_google   = !empty($user['google_id']);
             <div class="form-row">
                 <div>
                     <label for="password">Password i ri</label>
-                    <input type="password" name="password" id="password"
+                    <input type="password" name="password" id="password" maxlength="72"
                            placeholder="••••••••" autocomplete="new-password" required>
                     <div class="strength"><span id="strengthBar"></span></div>
                     <small class="hint" id="pwHint">Min 8 karaktere, shkronje dhe numer.</small>
                 </div>
                 <div>
                     <label for="cpassword">Konfirmo password-in</label>
-                    <input type="password" name="cpassword" id="cpassword"
+                    <input type="password" name="cpassword" id="cpassword" maxlength="72"
                            placeholder="••••••••" autocomplete="new-password" required>
                     <small class="hint" id="matchHint"></small>
                 </div>
@@ -540,17 +541,23 @@ $has_google   = !empty($user['google_id']);
                     </div>
                 </div>
 
-                <?php if (!$has_google): ?>
-                    <form method="POST" action="google-callback.php" class="connect-action">
-                        <input type="hidden" name="csrf"   value="<?= e(csrf_token()) ?>">
-                        <input type="hidden" name="action" value="link">
-                        <button type="submit" class="btn-google">Lidh Google</button>
-                    </form>
-                <?php endif; ?>
             </div>
 
             <?php if (!$has_google): ?>
-                <p class="connect-note">Kur te lidhesh Google, emaili i llogarise (<strong><?= e($user['email']) ?></strong>) zevendesohet me emailin e verifikuar te Google.</p>
+                <p class="connect-note">Kur te lidhesh Google, emaili i llogarise (<strong><?= e($user['email']) ?></strong>) zevendesohet me emailin e verifikuar te Google dhe emaili i vjeter njoftohet (me mundesi per ta anuluar ndryshimin).</p>
+
+                <form method="POST" action="google-callback.php" class="connect-unlink" novalidate>
+                    <input type="hidden" name="csrf"   value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="action" value="link">
+
+                    <label for="link_password">Per ta lidhur, konfirmo me password-in tend</label>
+                    <input type="password" id="link_password" name="link_password"
+                           placeholder="••••••••" autocomplete="current-password" required>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-google">Lidh Google</button>
+                    </div>
+                </form>
             <?php endif; ?>
 
             <?php if ($has_google && $is_google_only): ?>

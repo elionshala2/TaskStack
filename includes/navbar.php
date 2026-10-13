@@ -44,7 +44,10 @@ $task_pages = ['dashboard.php', 'add_task.php', 'edit_task.php']; // faqet e tas
             <span class="nav-user">Përshëndetje, <strong><?= e($username) ?></strong></span><!--nese perdoruesi eshte i kyqur e tregon emrin e tij ketu-->
             <a href="<?= $prefix ?>settings.php"
                class="btn-outline <?= $current === 'settings.php' ? 'btn-active' : '' ?>">Settings</a>
-            <a href="<?= $prefix ?>logout.php" class="btn-outline">Logout</a>
+            <form method="POST" action="<?= $prefix ?>logout.php" class="logout-form">
+                <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                <button type="submit" class="btn-outline">Logout</button>
+            </form>
         <?php else: ?>
             <a href="<?= $prefix ?>login.php"
                class="btn-outline <?= $current === 'login.php' ? 'btn-active' : '' ?>">Login</a>

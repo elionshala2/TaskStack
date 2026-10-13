@@ -14,10 +14,10 @@ CREATE TABLE IF NOT EXISTS regjistrimi (
     email          VARCHAR(255) NOT NULL UNIQUE,
     password       VARCHAR(255) NOT NULL,
     email_verified TINYINT(1)   NOT NULL DEFAULT 0,
-    provider       ENUM('local','google','apple','passkey') NOT NULL,
+    provider       ENUM('local','google','apple','passkey') NOT NULL DEFAULT 'local',
     google_id      VARCHAR(255) NULL UNIQUE,
     session_version INT UNSIGNED NOT NULL DEFAULT 1, -- rritet kur ndryshon/rivendoset passwordi ose mbyllen sesionet e tjera
-    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP -- pa ON UPDATE, qe data e regjistrimit mos te ndryshoje kur perditesohet rreshti
 ) ENGINE=InnoDB;
 
 -- Kategorite

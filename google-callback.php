@@ -6,17 +6,19 @@
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/mailer.php'; // njoftimi "anulo ndryshimin" kur lidhja me Google ndryshon emailin
 
 session_start();
+validate_session($conn); // sesion i vjeter (password i ndryshuar, "mbyll sesionet e tjera") hiqet para se te lejohet lidhja
 
 // Funksion ndihmes: ruan gabimin dhe kthen userin ne login
 function google_fail(string $msg): void
 {
     $dest = 'login.php';
     // nese useri eshte i kyqur dhe po lidh Google nga settings, kthehu atje
-    if (!empty($_SESSION['user_id']) && !empty($_SESSION['google_link'])) {
+    if (!empty($_SESSION['user_id']) && (!empty($_SESSION['google_link']) || !empty($_SESSION['google_reauth']))) {
         $dest = 'settings.php';
-        unset($_SESSION['google_link']);
+        unset($_SESSION['google_link'], $_SESSION['google_reauth']);
     }
     $_SESSION['flash_error'] = $msg;
     redirect($dest);
@@ -79,35 +81,54 @@ function google_make_username(mysqli $conn, string $name, string $email): string
     return 'user' . bin2hex(random_bytes(4));
 }
 
-// Nese tashme i kyqur: lejohet vetem per te LIDHUR Google nga settings.php
-$start_link = false;
+// Nese tashme i kyqur: lejohet vetem per te LIDHUR Google ose per te VERIFIKUAR identitetin (reauth) nga settings.php
 if (!empty($_SESSION['user_id'])) {
-    $uid        = (int)$_SESSION['user_id'];
-    $start_link = $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'link';
+    $uid    = (int)$_SESSION['user_id'];
+    $action = $_SERVER['REQUEST_METHOD'] === 'POST' ? (string)($_POST['action'] ?? '') : '';
+    $start  = in_array($action, ['link', 'reauth'], true) ? $action : '';
 
-    if ($start_link) {
-        // Fillimi i lidhjes vetem me POST + CSRF, qe nje faqe e huaj te mos
-        // mund te lidhe Google-in e dikujt tjeter me llogarine tende.
+    if ($start !== '') {
+        // Fillimi vetem me POST + CSRF, qe nje faqe e huaj te mos mund te lidhe Google-in e dikujt tjeter me llogarine tende.
         if (!verify_csrf($_POST['csrf'] ?? '')) {
             $_SESSION['flash_error'] = 'Kerkese e pavlefshme. Provo perseri.';
             redirect('settings.php');
         }
-        $_SESSION['google_link'] = $uid;
 
-    } elseif ((int)($_SESSION['google_link'] ?? 0) !== $uid) {
-        redirect('index.php'); // i kyqur dhe jo ne link mode
+        if ($start === 'link') {
+            // Lidhja kerkon passwordin aktual (si ndryshimi i emailit dhe shkeputja e Google),
+            // qe nje sesion i vjedhur te mos mund te lidhe Google-in e dikujt tjeter.
+            $stmt = $conn->prepare("SELECT id, password FROM regjistrimi WHERE id = ? LIMIT 1");
+            $stmt->bind_param("i", $uid);
+            $stmt->execute();
+            $acct = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+
+            $pw_err = null;
+            if (!$acct || !check_current_password($conn, $acct, (string)($_POST['link_password'] ?? ''), $pw_err)) {
+                $_SESSION['flash_error'] = $pw_err ?? 'Konfirmo me password-in tend per te lidhur Google.';
+                redirect('settings.php');
+            }
+        }
+
+        $_SESSION['google_link']   = $start === 'link'   ? $uid : 0;
+        $_SESSION['google_reauth'] = $start === 'reauth' ? $uid : 0;
+
+    } elseif ((int)($_SESSION['google_link'] ?? 0) !== $uid && (int)($_SESSION['google_reauth'] ?? 0) !== $uid) {
+        redirect('index.php'); // i kyqur dhe jo ne link/reauth mode
         exit;
 
     } elseif (!isset($_GET['code']) && !isset($_GET['error'])) {
-        unset($_SESSION['google_link']); // link mode i vjeter, pastroje
+        unset($_SESSION['google_link'], $_SESSION['google_reauth']); // mode i vjeter, pastroje
         redirect('settings.php');
     }
 } else {
-    unset($_SESSION['google_link']);
+    unset($_SESSION['google_link'], $_SESSION['google_reauth']);
 }
 
 // > 0 kur po lidhim Google me llogarine e kyqur (jo kyqje/signup)
 $linking_user = !empty($_SESSION['user_id']) ? (int)($_SESSION['google_link'] ?? 0) : 0;
+// > 0 kur po verifikojme identitetin e userit te kyqur me Google
+$reauth_user  = !empty($_SESSION['user_id']) ? (int)($_SESSION['google_reauth'] ?? 0) : 0;
 
 // Useri e anuloi ose Google ktheu gabim
 if (isset($_GET['error'])) {
@@ -125,7 +146,7 @@ if (!isset($_GET['code'])) {
         'response_type' => 'code',
         'scope'         => 'openid email profile',
         'state'         => $state,
-        'prompt'        => 'select_account',
+        'prompt'        => $reauth_user > 0 ? 'login' : 'select_account', // reauth: Google kerkon kyqje te re
     ]);
 
     header('Location: https://accounts.google.com/o/oauth2/v2/auth?' . $params);
@@ -166,13 +187,39 @@ if ($gid === '' || $email === '' || empty($info['email_verified'])) {
     google_fail('Emaili i Google nuk eshte i verifikuar.');
 }
 
+/* ---------- REAUTH: useri i kyqur verifikon identitetin me Google ---------- */
+if ($reauth_user > 0) {
+    unset($_SESSION['google_reauth']);
+
+    try {
+        $stmt = $conn->prepare("SELECT google_id FROM regjistrimi WHERE id = ? LIMIT 1");
+        $stmt->bind_param("i", $reauth_user);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if ($row && !empty($row['google_id']) && hash_equals((string)$row['google_id'], $gid)) {
+            $_SESSION['reauth_until']  = time() + 300; // 5 minuta
+            $_SESSION['flash_success'] = 'Identiteti u verifikua. Ke 5 minuta per te vendosur password ose per te fshire llogarine.';
+        } else {
+            $_SESSION['flash_error'] = 'Ky nuk eshte Google-i i lidhur me kete llogari.';
+        }
+    } catch (mysqli_sql_exception $e) {
+        error_log('Google reauth error: ' . $e->getMessage());
+        $_SESSION['flash_error'] = 'Diqka shkoi gabim. Provo perseri.';
+    }
+
+    redirect('settings.php');
+    exit;
+}
+
 /* ---------- LIDHJE: useri i kyqur po lidh Google nga settings ---------- */
 if ($linking_user > 0) {
     unset($_SESSION['google_link']);
 
     try {
         // Llogaria duhet te kete emailin e verifikuar para se te lidhet Google
-        $stmt = $conn->prepare("SELECT email_verified FROM regjistrimi WHERE id = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT email_verified, email, username FROM regjistrimi WHERE id = ? LIMIT 1");
         $stmt->bind_param("i", $linking_user);
         $stmt->execute();
         $me = $stmt->get_result()->fetch_assoc();
@@ -220,6 +267,10 @@ if ($linking_user > 0) {
                 $stmt->close();
 
                 if ($linked) {
+                    // emaili i vjeter njoftohet (me link per ta anuluar ndryshimin) nese emaili ndryshoi
+                    if (strcasecmp((string)$me['email'], $email) !== 0) {
+                        send_email_changed_notice($conn, $linking_user, (string)$me['email'], $email, (string)$me['username']);
+                    }
                     $_SESSION['flash_success'] = 'Google u lidh me sukses! Emaili i llogarise tani eshte ' . $email . '.';
                 } else {
                     $_SESSION['flash_error'] = 'Llogaria jote ka tashme nje Google te lidhur.';
@@ -257,16 +308,28 @@ try {
                 google_fail('Ky email eshte i lidhur me nje llogari tjeter Google.');
             }
 
-            // Llogari lokale e paverifikuar: mos e lidh Google derisa emaili te verifikohet
             if (!(int)$byEmail['email_verified'] && empty($byEmail['google_id'])) {
-                google_fail('Kjo llogari ekziston por emaili nuk eshte verifikuar. Verifikoje fillimisht me linkun nga emaili (ose dergo perseri nga faqja Login).');
-            }
+                // Llogari lokale e paverifikuar me kete email: Google sapo vertetoi qe emaili eshte i ketij useri,
+                // ndaj llogaria i kalon atij dhe passwordi i vendosur nga dikush tjeter (ai qe e regjistroi pa e zoteruar
+                // emailin) behet i pavlefshem; sesionet dhe linqet e verifikimit te vjetra mbyllen.
+                $void_hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
+                $stmt = $conn->prepare(
+                    "UPDATE regjistrimi SET password = ?, provider = 'google', google_id = ?, email_verified = 1,
+                            session_version = session_version + 1
+                     WHERE id = ?"
+                );
+                $stmt->bind_param("ssi", $void_hash, $gid, $byEmail['id']);
+                $stmt->execute();
+                $stmt->close();
+                invalidate_user_tokens($conn, (int)$byEmail['id'], 'verify');
 
-            // Lidh Google ID me llogarine ekzistuese
-            $stmt = $conn->prepare("UPDATE regjistrimi SET google_id = ? WHERE id = ?");
-            $stmt->bind_param("si", $gid, $byEmail['id']);
-            $stmt->execute();
-            $stmt->close();
+            } else {
+                // Lidh Google ID me llogarine ekzistuese (e verifikuar)
+                $stmt = $conn->prepare("UPDATE regjistrimi SET google_id = ? WHERE id = ?");
+                $stmt->bind_param("si", $gid, $byEmail['id']);
+                $stmt->execute();
+                $stmt->close();
+            }
 
             $user = ['id' => $byEmail['id'], 'username' => $byEmail['username']];
         }
@@ -281,7 +344,7 @@ try {
         $provider = 'google';
 
         $stmt = $conn->prepare(
-            "INSERT INTO regjistrimi (username, email, password, provider, google_id) VALUES (?, ?, ?, ?, ?)"
+            "INSERT INTO regjistrimi (username, email, password, provider, google_id, email_verified) VALUES (?, ?, ?, ?, ?, 1)"
         );
         $stmt->bind_param("sssss", $username, $email, $hash, $provider, $gid);
         $stmt->execute();

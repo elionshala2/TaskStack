@@ -69,6 +69,7 @@ function login_user($conn, int $user_id, string $username): void {
     $_SESSION['user_id']  = $user_id;
     $_SESSION['username'] = $username;
     $_SESSION['sv']       = $sv;
+    unset($_SESSION['reauth_until'], $_SESSION['google_reauth'], $_SESSION['google_link']);
 }
 
 // Kontrollon qe sesioni i kyqur eshte ende i vlefshem: useri ekziston dhe versioni perputhet.
@@ -92,7 +93,7 @@ function validate_session($conn): void {
     }
 
     if (!$valid) {
-        unset($_SESSION['user_id'], $_SESSION['username'], $_SESSION['sv'], $_SESSION['google_link']);
+        unset($_SESSION['user_id'], $_SESSION['username'], $_SESSION['sv'], $_SESSION['google_link'], $_SESSION['google_reauth'], $_SESSION['reauth_until']);
         $_SESSION['flash_error'] = 'Sesioni yt perfundoi. Kyqu perseri.';
     }
 }
@@ -133,10 +134,74 @@ function category_colors() {
 // =================================================================
 
 define('MAX_LOGIN_ATTEMPTS', 5); // maksimum 5 tentative per IP, mund te ndryshohet
+define('MAX_ACCOUNT_ATTEMPTS', 10); // maksimum 10 tentative te gabuara per llogari (nga cdo IP), qe sulmet e shperndara te mos kalojne
 define('LOGIN_WINDOW_MINUTES', 15); // 15 minuta nuk mund te tentohet per IP
 
-function client_ip() { // merr IP e klientit, nese nuk ekziston kthen 0.0.0.0
-    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+// Hash i rremë (bcrypt) qe perdoret kur emaili nuk ekziston, qe koha e pergjigjes te jete e njejte (nuk zbulohet cilat emaile ekzistojne)
+define('LOGIN_DUMMY_HASH', '$2y$10$.vGA1O9wmRjrwAVXD98HNOgsNpDczlqm3Jq7KnEd1rVAGv3Fykk1a');
+
+// A eshte IP-ja ne liste (IP te vecanta ose CIDR, te ndara me presje)?
+function ip_in_list(string $ip, string $list): bool {
+    $ipBin = @inet_pton($ip);
+    if ($ipBin === false) {
+        return false;
+    }
+    foreach (explode(',', $list) as $entry) {
+        $entry = trim($entry);
+        if ($entry === '') {
+            continue;
+        }
+        $parts  = explode('/', $entry, 2);
+        $netBin = @inet_pton($parts[0]);
+        if ($netBin === false || strlen($netBin) !== strlen($ipBin)) {
+            continue;
+        }
+        $bits  = isset($parts[1]) ? (int)$parts[1] : strlen($netBin) * 8;
+        $bytes = intdiv($bits, 8);
+        $rem   = $bits % 8;
+        if ($bytes > 0 && substr($ipBin, 0, $bytes) !== substr($netBin, 0, $bytes)) {
+            continue;
+        }
+        if ($rem > 0) {
+            $mask = (0xFF << (8 - $rem)) & 0xFF;
+            if ((ord($ipBin[$bytes]) & $mask) !== (ord($netBin[$bytes]) & $mask)) {
+                continue;
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+// IP e klientit. X-Forwarded-For merret parasysh VETEM nese kerkesa vjen nga nje proxy i listuar ne
+// TRUSTED_PROXIES (.env); perndryshe kushdo mund ta falsifikoje. Pa proxy, perdoret REMOTE_ADDR.
+function client_ip() {
+    $remote  = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $trusted = trim((string)($_ENV['TRUSTED_PROXIES'] ?? ''));
+    $xff     = (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+
+    if ($trusted === '' || $xff === '' || !ip_in_list($remote, $trusted)) {
+        return $remote;
+    }
+
+    // nga e djathta: IP e pare qe nuk eshte proxy i besuar eshte klienti
+    foreach (array_reverse(array_map('trim', explode(',', $xff))) as $candidate) {
+        if (!filter_var($candidate, FILTER_VALIDATE_IP)) {
+            return $remote;
+        }
+        if (!ip_in_list($candidate, $trusted)) {
+            return $candidate;
+        }
+    }
+    return $remote;
+}
+
+// Celesat e rate limiting per llogari (ruhen ne kolonen "ip", max 45 karaktere)
+function account_key(string $email): string {
+    return 'a:' . substr(hash('sha256', mb_strtolower(trim($email))), 0, 40);
+}
+function user_key(int $user_id): string {
+    return 'u:' . $user_id;
 }
 
 function login_attempts_count($conn, $ip) { // kontrollon sa tentativa ka pasur IPja e dhene, nese ka me shume se 5 kthen 0, nese jo kthen numrin e tentativave
@@ -156,12 +221,13 @@ function login_attempts_count($conn, $ip) { // kontrollon sa tentativa ka pasur 
     }
 }
 
-function record_login_attempt($conn, $ip) { // regjistron nje tentative per IP e dhene
+function record_login_attempt($conn, $ip) { // regjistron nje tentative per IP (ose celes llogarie) e dhene
     try {
         $stmt = $conn->prepare("INSERT INTO login_attempts (ip) VALUES (?)");
         $stmt->bind_param("s", $ip);
         $stmt->execute();
         $stmt->close();
+        maybe_cleanup($conn);
     } catch (mysqli_sql_exception $e) {
         error_log("Rate limit insert error: " . $e->getMessage());
     }
@@ -176,4 +242,64 @@ function clear_login_attempts($conn, $ip) { // nese useri kyqet me sukses i fshi
     } catch (mysqli_sql_exception $e) {
         error_log("Rate limit clear error: " . $e->getMessage());
     }
+}
+
+// Pastron te dhenat e vjetra (here pas here, ~1 nga 50 kerkesat qe shkruajne ne tabelat e rate limiting):
+// tentativat/kerkesat e vjetra, tokenat e skaduar dhe llogarite e paverifikuara (>3 dite), qe emailet te mos zihen pafund
+function maybe_cleanup($conn): void {
+    if (random_int(1, 50) !== 1) {
+        return;
+    }
+    try {
+        $conn->query("DELETE FROM login_attempts WHERE attempted_at < (NOW() - INTERVAL 1 DAY)");
+        $conn->query("DELETE FROM mail_requests WHERE requested_at < (NOW() - INTERVAL 1 DAY)");
+        $conn->query("DELETE FROM email_tokens WHERE expires_at < (NOW() - INTERVAL 7 DAY) OR used_at < (NOW() - INTERVAL 7 DAY)");
+        $conn->query("DELETE FROM regjistrimi
+                      WHERE email_verified = 0 AND (google_id IS NULL OR google_id = '')
+                        AND created_at < (NOW() - INTERVAL 3 DAY)");
+    } catch (mysqli_sql_exception $e) {
+        error_log("Cleanup error: " . $e->getMessage());
+    }
+}
+
+// =================================================================
+// Passwordi: rregullat (te njejta kudo) dhe verifikimi i passwordit aktual
+// =================================================================
+
+define('PASSWORD_MAX_LENGTH', 72); // bcrypt injoron cdo gje mbi 72 bajt
+
+function password_errors(string $pw, string $cpw): array {
+    $errs = [];
+    if (strlen($pw) < 8 || !preg_match('/[A-Za-z]/', $pw) || !preg_match('/\d/', $pw)) {
+        $errs[] = 'Password: min 8 karaktere, te pakten 1 shkronje dhe 1 numer.';
+    }
+    if (strlen($pw) > PASSWORD_MAX_LENGTH) {
+        $errs[] = 'Password: maksimumi ' . PASSWORD_MAX_LENGTH . ' karaktere.';
+    }
+    if ($pw !== $cpw) {
+        $errs[] = 'Password-et nuk perputhen.';
+    }
+    return $errs;
+}
+
+// Verifikon passwordin aktual te nje useri ($user duhet te ka 'id' dhe 'password'), me rate limiting
+// per IP dhe per llogari (perdoret nga settings.php dhe google-callback.php)
+function check_current_password(mysqli $conn, array $user, string $given, ?string &$err): bool {
+    $ip   = client_ip();
+    $ukey = user_key((int)$user['id']);
+
+    if (login_attempts_count($conn, $ip) >= MAX_LOGIN_ATTEMPTS
+        || login_attempts_count($conn, $ukey) >= MAX_ACCOUNT_ATTEMPTS) {
+        $err = 'Shume tentativa te pasuksesshme. Provo perseri pas ' . LOGIN_WINDOW_MINUTES . ' minutash.';
+        return false;
+    }
+    if ($given === '' || strlen($given) > 1024 || !password_verify($given, $user['password'])) {
+        record_login_attempt($conn, $ip);
+        record_login_attempt($conn, $ukey);
+        $err = 'Password-i aktual eshte i gabuar.';
+        return false;
+    }
+    // IP nuk pastrohet me sukses (qe kush ka llogari te vete te mos e rivendose limitin duke u kyqur ne te)
+    clear_login_attempts($conn, $ukey);
+    return true;
 }

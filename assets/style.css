@@ -2658,6 +2658,34 @@ a.task-cat .dot {
     color: var(--accent-2);
 }
 
+/* Logout (forme POST) - duket si linku/butoni i meparshem */
+.logout-form {
+    display: inline;
+    margin: 0;
+}
+
+.logout-form button,
+.logout-form button:hover {
+    width: auto;
+    margin-top: 0;
+    box-shadow: none;
+}
+
+.footer-links .logout-form button {
+    padding: 0;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-soft);
+    background: none;
+    border: none;
+    border-radius: 0;
+}
+
+.footer-links .logout-form button:hover {
+    color: var(--accent-2);
+    transform: none;
+}
+
 .footer-copy {
     grid-column: 1 / -1;
     margin-top: 8px;

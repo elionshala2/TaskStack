@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Kerkese e pavlefshme. Provo perseri.';
     } else {
         $username  = trim($_POST['username'] ?? '');
-        $email     = trim($_POST['email'] ?? '');
+        $email     = mb_strtolower(trim($_POST['email'] ?? '')); // emailet ruhen gjithmone me shkronja te vogla
         $password  = $_POST['password'] ?? '';
         $cpassword = $_POST['cpassword'] ?? '';
 
@@ -40,20 +40,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Email i pavlefshem.';
         }
 
-        if (strlen($password) < 8
-            || !preg_match('/[A-Za-z]/', $password)
-            || !preg_match('/\d/', $password)) {
-            $errors[] = 'Password: min 8 karaktere, te pakten 1 shkronje dhe 1 numer.';
+        foreach (password_errors($password, $cpassword) as $pe) {
+            $errors[] = $pe;
         }
 
-        if ($password !== $cpassword) {
-            $errors[] = 'Password-et nuk perputhen.';
+        // Limit per IP (qe forma te mos perdoret per te derguar spam te emaile te huaja)
+        $ip = client_ip();
+        if (empty($errors) && mail_requests_count($conn, $ip) >= MAX_MAIL_REQUESTS) {
+            $errors[] = 'Shume kerkesa. Provo perseri pas ' . MAIL_WINDOW_MINUTES . ' minutash.';
         }
 
         // Kontroll dublikat + insert
         if (empty($errors)) {
             try {
-                // 1. Kontrollo a ekziston vetem username-i
+                // 1. Kontrollo a ekziston username-i
                 $stmt = $conn->prepare("SELECT id FROM regjistrimi WHERE username = ? LIMIT 1");
                 $stmt->bind_param("s", $username);
                 $stmt->execute();
@@ -61,50 +61,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $username_exists = $stmt->num_rows > 0;
                 $stmt->close();
 
-                // 2. Kontrollo a ekziston vetem email-i
-                $stmt = $conn->prepare("SELECT id FROM regjistrimi WHERE email = ? LIMIT 1");
-                $stmt->bind_param("s", $email);
-                $stmt->execute();
-                $stmt->store_result();
-                $email_exists = $stmt->num_rows > 0;
-                $stmt->close();
-
-                // 3. Shfaq gabimin specifik sipas rastit
-                if ($username_exists && $email_exists) {
-                    $errors[] = 'Email dhe username (te dyja) ekzistojne! Ju lutem zgjidhni nje tjeter kombinim ose provoni te kyqeni.';
-                } elseif ($username_exists) {
-                    $errors[] = 'Ky username ekziston!  Ju lutem zgjidhni nje tjeter ose provoni te kyqeni.';
-                } elseif ($email_exists) {
-                    $errors[] = 'Ky email ekziston! Zgjedh nje tjeter ose provoni te kyqeni.';
+                if ($username_exists) {
+                    $errors[] = 'Ky username ekziston! Ju lutem zgjidhni nje tjeter ose provoni te kyqeni.';
                 } else {
-                    $hash = password_hash($password, PASSWORD_DEFAULT);
-
-                    $stmt = $conn->prepare(
-                        "INSERT INTO regjistrimi (username, email, password) VALUES (?, ?, ?)"
-                    );
-                    $stmt->bind_param("sss", $username, $email, $hash);
+                    // 2. A ka tashme llogari ky email? (nuk zbulohet ne faqe, qe te mos numerohen emailet e regjistruara)
+                    $stmt = $conn->prepare("SELECT id, username, email_verified, google_id FROM regjistrimi WHERE email = ? LIMIT 1");
+                    $stmt->bind_param("s", $email);
                     $stmt->execute();
+                    $existing = $stmt->get_result()->fetch_assoc();
                     $stmt->close();
 
-                    // ID e userit te ri
-                    $new_user_id = $conn->insert_id;
+                    record_mail_request($conn, $ip);
 
-                    // Krijo kategorine default Inbox
-                    ensure_default_category($conn, $new_user_id);
+                    if ($existing) {
+                        // pronari i emailit merr njoftim ne inbox, jo ne faqe
+                        if (!(int)$existing['email_verified'] && empty($existing['google_id'])) {
+                            if (!recent_token_exists($conn, (int)$existing['id'], 'verify')) {
+                                send_verification_email($conn, (int)$existing['id'], $email, $existing['username']);
+                            }
+                        } else {
+                            send_account_exists_email($email, $existing['username']);
+                        }
+                    } else {
+                        $hash = password_hash($password, PASSWORD_DEFAULT);
 
-                    // Dergo emailin e verifikimit (llogaria kyqet vetem pas verifikimit)
-                    $sent = send_verification_email($conn, $new_user_id, $email, $username);
+                        $stmt = $conn->prepare(
+                            "INSERT INTO regjistrimi (username, email, password) VALUES (?, ?, ?)"
+                        );
+                        $stmt->bind_param("sss", $username, $email, $hash);
+                        $stmt->execute();
+                        $stmt->close();
 
-                    $_SESSION['flash_success'] = $sent
-                        ? 'Llogaria u krijua! Te dergova nje email verifikimi. Kliko linkun ne email per te aktivizuar llogarine, pastaj kyqu.'
-                        : 'Llogaria u krijua, por emaili i verifikimit nuk u dergua. Perdor "Dergo perseri emailin e verifikimit" ne faqen Login.';
+                        // ID e userit te ri
+                        $new_user_id = $conn->insert_id;
+
+                        // Krijo kategorine default Inbox
+                        ensure_default_category($conn, $new_user_id);
+
+                        // Dergo emailin e verifikimit (llogaria kyqet vetem pas verifikimit)
+                        send_verification_email($conn, $new_user_id, $email, $username);
+                    }
+
+                    // mesazh i njejte gjithmone (nuk zbulon nese emaili kishte llogari)
+                    $_SESSION['flash_success'] = 'Nese ky email mund te perdoret, te dergova nje link verifikimi. Kontrollo inbox-in (edhe spam), kliko linkun per te aktivizuar llogarine, pastaj kyqu. Nese nuk e merr, perdor "Dergo perseri emailin e verifikimit" ne faqen Login.';
                     redirect('login.php');
                 }
 
             } catch (mysqli_sql_exception $e) {
                 error_log("Signup error: " . $e->getMessage());
 
-                // Nese eshte dublikat trajtoje
+                // Nese eshte dublikat (kerkesa te njekohshme) trajtoje
                 if ((int)$e->getCode() === 1062) {
                     $errors[] = 'Ky email ose username ekziston tashme.';
                 } else {
@@ -161,14 +167,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    autocomplete="email" required>
 
             <label>Password</label>
-            <input type="password" name="password" id="password"
+            <input type="password" name="password" id="password" maxlength="72"
                    placeholder="••••••••"
                    autocomplete="new-password" required>
             <div class="strength"><span id="strengthBar"></span></div>
             <small class="hint" id="pwHint">Min 8 karaktere, shkronje dhe numer.</small>
 
             <label>Confirm Password</label>
-            <input type="password" name="cpassword" id="cpassword"
+            <input type="password" name="cpassword" id="cpassword" maxlength="72"
                    placeholder="••••••••"
                    autocomplete="new-password" required>
             <small class="hint" id="matchHint"></small>

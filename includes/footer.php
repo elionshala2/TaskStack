@@ -21,7 +21,10 @@ $f_loggedIn  = !empty($_SESSION['user_id']); // shikon neser perdoruesi eshte i 
                 <a href="<?= $f_prefix ?>categories.php">Kategorite</a>
                 <a href="<?= $f_prefix ?>privacy.php">Privacy Policy</a>
                 <a href="<?= $f_prefix ?>terms.php">Terms of Service</a>
-                <a href="<?= $f_prefix ?>logout.php">Logout</a>
+                <form method="POST" action="<?= $f_prefix ?>logout.php" class="logout-form">
+                    <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                    <button type="submit">Logout</button>
+                </form>
             <?php else: ?>
                 <a href="<?= $f_prefix ?>login.php">Login</a>
                 <a href="<?= $f_prefix ?>signup.php">Sign Up</a>

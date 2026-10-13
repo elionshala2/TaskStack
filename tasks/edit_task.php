@@ -92,6 +92,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Titulli nuk duhet te kaloje 255 karaktere.';
         }
 
+        if (mb_strlen($old['description']) > 2000) {
+            $errors[] = 'Pershkrimi nuk duhet te kaloje 2000 karaktere.';
+        }
+
         if (!in_array($old['priority'], ['low', 'medium', 'high'], true)) {
             $errors[] = 'Prioritet i pavlefshem.';
         }
@@ -182,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                value="<?= e($old['title']) ?>" required autofocus>
 
         <label>Pershkrimi (opsional)</label>
-        <textarea name="description" rows="4"><?= e($old['description']) ?></textarea>
+        <textarea name="description" rows="4" maxlength="2000"><?= e($old['description']) ?></textarea>
 
         <div class="form-row">
             <div>

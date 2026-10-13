@@ -19,6 +19,8 @@ Nje web aplikacion per menaxhimin e detyrave me autentifikim perdoruesi, i ndert
 | `DB_SERVER`, `DB_USER`, `DB_PASS`, `DB_DATABASE` | Lidhja me databazen. Ne XAMPP: `localhost`, `root`, passwordi bosh, `todolist`. |
 | `APP_URL` | URL e aplikacionit, pa `/` ne fund (p.sh. `http://localhost/TaskStack`). Perdoret per linqet ne emaile. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | Per kyqjen me Google (opsionale). Krijo OAuth client ne Google Cloud Console dhe regjistro `GOOGLE_REDIRECT_URI` saktesisht si ne `.env`. |
+| `APP_DEBUG` | `0` (parazgjedhja) = gabimet e PHP nuk shfaqen ne faqe, vetem ne log. Vendos `1` vetem ne zhvillim lokal. |
+| `TRUSTED_PROXIES` | Opsionale. IP/CIDR te proxy-ve te besuara (p.sh. Cloudflare ose load balancer-i i hostit), te ndara me presje. Vetem kur kerkesa vjen nga nje prej tyre, `X-Forwarded-For` perdoret per IP e klientit (rate limiting). Lere bosh nese nuk ke proxy. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_FROM_NAME` | Per emailet (verifikim, reset password, njoftime sigurie). Me Gmail perdor "App Password" dhe port `587` me `SMTP_SECURE=tls` (ose `465` me `ssl`). |
 
 Mos e commit-o `.env` kurre (eshte ne `.gitignore`). Nese e ke ndare me dike, ndrysho sekretet.
@@ -59,6 +61,9 @@ Mos e commit-o `.env` kurre (eshte ne `.gitignore`). Nese e ke ndare me dike, nd
 - **Cookie e sesionit:** `HttpOnly`, `SameSite=Lax`, `Secure` kur faqja hapet me HTTPS, `use_strict_mode`, session ID vetem ne cookie. Cilesimet jane ne `includes/session.php`.
 - **Headers e sigurise:** Content-Security-Policy (pa JS inline), `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, dhe HSTS ne HTTPS.
 - **Mbyllja e sesioneve ne pajisje te tjera:** secili user ka `session_version` ne databaze. Kur passwordi ndryshohet ose rivendoset (ose anulohet ndryshimi nga emaili), ose kur useri shtyp "Mbyll sesionet e tjera" ne Settings, versioni rritet dhe te gjitha sesionet e tjera bien. Sesioni aktual mbetet i kyqur.
+- **Rate limiting:** max 5 tentativa te gabuara per IP dhe max 10 per llogari ne 15 minuta. Kur faqja eshte pas proxy-t, vendos `TRUSTED_PROXIES` (perndryshe te gjithe userat shihen me te njejten IP).
+- **Veprime te ndjeshme:** lidhja e Google, ndryshimi i emailit, shkeputja e Google dhe fshirja e llogarise kerkojne passwordin aktual; llogarite vetem me Google verifikojne perseri me Google (5 minuta) para se te vendosin password ose te fshijne llogarine. Logout eshte POST + CSRF.
+- **Regjistrimi:** faqja nuk zbulon nese nje email ka llogari (pronari merr njoftim ne inbox). Llogarite e paverifikuara fshihen pas 3 diteve; nese dikush kyqet me Google me nje email te paverifikuar, passwordi i vendosur me pare behet i pavlefshem.
 - CSRF token ne cdo formular POST, prepared statements kudo, tokenat e emailit ruhen vetem si hash SHA-256.
 
 Shenim per zhvilluesit: mos shto `onclick`/`onsubmit` inline ose `<script>` inline, sepse CSP i bllokon. Per konfirmim para nje veprimi, vendos `data-confirm="Mesazhi"` ne `<form>` (e trajton `assets/script.js`).

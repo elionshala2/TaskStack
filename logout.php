@@ -5,6 +5,14 @@ require_once __DIR__ . '/includes/session.php'; // cilesimet e njejta te cookie-
 
 session_start();
 
+// Dalja vetem me POST + CSRF (nje link GET nga faqe e huaj nuk mund te te c'kyqe)
+$csrf_ok = isset($_SESSION['csrf'], $_POST['csrf'])
+    && hash_equals((string)$_SESSION['csrf'], (string)$_POST['csrf']);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$csrf_ok) {
+    header("Location: index.php");
+    exit;
+}
+
 // Fshi te gjitha variablat e sesionit
 $_SESSION = [];
 

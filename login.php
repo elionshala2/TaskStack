@@ -36,18 +36,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf($_POST['csrf'] ?? '')) {
         $errors[] = 'Kerkese e pavlefshme. Provo perseri.';
 
-    // Rate limiting: max 5 tentativa per IP
-    } elseif (login_attempts_count($conn, $ip) >= MAX_LOGIN_ATTEMPTS) {
-        $errors[] = 'Shume tentativa te pasuksesshme. Provo perseri pas ' . LOGIN_WINDOW_MINUTES . ' minutash.'; // nuk tregon sa minuta, vetem mesazh i pergjithshem (ne kete rast 15 minuta)
-
     } else {
-        $email    = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
+        $email     = trim($_POST['email'] ?? '');
+        $password  = $_POST['password'] ?? '';
         $old_email = $email;
+        $akey      = account_key($email); // limit edhe per llogari (jo vetem per IP), kunder sulmeve nga shume IP
+
+        // Rate limiting: max 5 tentativa per IP dhe max 10 per llogari
+        if (login_attempts_count($conn, $ip) >= MAX_LOGIN_ATTEMPTS
+            || login_attempts_count($conn, $akey) >= MAX_ACCOUNT_ATTEMPTS) {
+            $errors[] = 'Shume tentativa te pasuksesshme. Provo perseri pas ' . LOGIN_WINDOW_MINUTES . ' minutash.'; // mesazh i pergjithshem
 
         // Kontrollon nese eshte thate
-        if ($email === '' || $password === '') {
+        } elseif ($email === '' || $password === '') {
             $errors[] = 'Ploteso te gjitha fushat.';
+
+        } elseif (strlen($password) > 1024) {
+            // password absurdisht i gjate: nuk kalon ne bcrypt
+            record_login_attempt($conn, $ip);
+            record_login_attempt($conn, $akey);
+            $errors[] = 'Kredencialet e pavlefshme.';
+
         } else {
             try {
                 // Kerko user-in ne databaze
@@ -60,8 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $user   = $result->fetch_assoc();
                 $stmt->close();
 
-                // Verifiko passwordin
-                $passwordOk = $user && password_verify($password, $user['password']);
+                // Verifiko passwordin. Kur emaili nuk ekziston verifikohet kunder nje hash te rreme, qe koha e pergjigjes
+                // te jete e njejte (nuk zbulohet cilat emaile kane llogari)
+                $passwordOk = password_verify($password, $user['password'] ?? LOGIN_DUMMY_HASH) && $user !== null;
 
                 // Passwordi sakte, por emaili s'eshte verifikuar (llogarite me Google llogariten te verifikuara)
                 if ($passwordOk && !(int)$user['email_verified'] && empty($user['google_id'])) {
@@ -70,8 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 } elseif ($passwordOk) {
 
-                    // Pastro tentativat e vjetra per kete IP
-                    clear_login_attempts($conn, $ip);
+                    // Pastro tentativat e kesaj llogarie (tentativat e IP skadojne vete, qe mos te rivendosen me nje login te suksesshem)
+                    clear_login_attempts($conn, $akey);
 
                     // Rigjeneron session ID (mbrojtje session fixation) dhe ruan user-in + versionin e sesionit
                     login_user($conn, (int)$user['id'], $user['username']);
@@ -80,8 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     redirect('index.php');
 
                 } else {
-                    // Numro tentativen e gabuar
+                    // Numro tentativen e gabuar (per IP dhe per llogari)
                     record_login_attempt($conn, $ip);
+                    record_login_attempt($conn, $akey);
 
                     // Mesazh i pergjithshem (nuk tregon a ekziston emaili)
                     $errors[] = 'Kredencialet e pavlefshme.';

@@ -27,14 +27,9 @@ if ($valid && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $password  = (string)($_POST['password'] ?? '');
         $cpassword = (string)($_POST['cpassword'] ?? '');
 
-        // Te njejtat rregulla si ne signup.php
-        if (strlen($password) < 8
-            || !preg_match('/[A-Za-z]/', $password)
-            || !preg_match('/\d/', $password)) {
-            $errors[] = 'Password: min 8 karaktere, te pakten 1 shkronje dhe 1 numer.';
-        }
-        if ($password !== $cpassword) {
-            $errors[] = 'Password-et nuk perputhen.';
+        // Te njejtat rregulla si ne signup.php (funksioni ne includes/functions.php)
+        foreach (password_errors($password, $cpassword) as $pe) {
+            $errors[] = $pe;
         }
 
         if (empty($errors)) {
@@ -123,13 +118,13 @@ if ($valid && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="hidden" name="token" value="<?= e($token) ?>">
 
                 <label>Password i ri</label>
-                <input type="password" name="password" id="password"
+                <input type="password" name="password" id="password" maxlength="72"
                        placeholder="••••••••" autocomplete="new-password" required>
                 <div class="strength"><span id="strengthBar"></span></div>
                 <small class="hint" id="pwHint">Min 8 karaktere, shkronje dhe numer.</small>
 
                 <label>Konfirmo password-in</label>
-                <input type="password" name="cpassword" id="cpassword"
+                <input type="password" name="cpassword" id="cpassword" maxlength="72"
                        placeholder="••••••••" autocomplete="new-password" required>
                 <small class="hint" id="matchHint"></small>
 

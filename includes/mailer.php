@@ -169,6 +169,7 @@ function record_mail_request($conn, string $ip): void {
         $stmt->bind_param("s", $ip);
         $stmt->execute();
         $stmt->close();
+        maybe_cleanup($conn);
     } catch (mysqli_sql_exception $ex) {
         error_log('Mail rate limit insert error: ' . $ex->getMessage());
     }
@@ -213,6 +214,18 @@ function send_verification_email($conn, int $user_id, string $email, string $use
     $text = "$intro\n\n$link\n\n$note";
 
     return send_mail($email, 'Verifiko emailin - TaskStack', $html, $text);
+}
+
+// Kur dikush regjistrohet me nje email qe ka tashme llogari (nuk zbulohet ne faqe, vetem ne inbox te pronarit)
+function send_account_exists_email(string $email, string $username): bool {
+    $link  = app_url() . '/login.php';
+    $intro = "Pershendetje $username, dikush u perpoq te regjistrohet ne TaskStack me kete email, por ti ke tashme nje llogari. Nese ke qene ti, kyqu ose rivendos passwordin nga faqja e login-it.";
+    $note  = 'Nese nuk ke qene ti, injoroje kete email, asgje nuk ndryshon ne llogarine tende.';
+
+    $html = email_template('Ke tashme nje llogari', $intro, 'Shko te Login', $link, $note);
+    $text = "$intro\n\n$link\n\n$note";
+
+    return send_mail($email, 'Ke tashme nje llogari - TaskStack', $html, $text);
 }
 
 function send_reset_email($conn, int $user_id, string $email, string $username): bool {
