@@ -1,0 +1,24 @@
+# TaskStack .htaccess  (place in htdocs/, next to index.php)
+
+# No directory listings
+Options -Indexes
+
+# Block sensitive files (.env, .git*, composer files, SQL, docs, logs, license)
+<FilesMatch "^(\.env.*|\.git.*|composer\.(json|lock)|LICENSE|.*\.(sql|md|log|lock))$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Block internal folders (PHP loads these from disk, never via the browser)
+RedirectMatch 404 "(?i)(^|/)(\.git|vendor|includes|logs)(/|$)"
+
+# Force HTTPS: uncomment ONLY after the free SSL certificate is active
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
