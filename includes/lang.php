@@ -16,6 +16,9 @@ return [
 
     // footer
     'footer.tagline' => ['sq' => 'Krijo hapësirë për atë që ka rëndësi', 'en' => 'Make room for what matters'],
+    'footer.product' => ['sq' => 'Produkti', 'en' => 'Product'],
+    'footer.account' => ['sq' => 'Llogaria', 'en' => 'Account'],
+    'footer.legal'   => ['sq' => 'Ligjore', 'en' => 'Legal'],
     'footer.privacy' => ['sq' => 'Privacy Policy', 'en' => 'Privacy Policy'],
     'footer.terms'   => ['sq' => 'Terms of Service', 'en' => 'Terms of Service'],
     'footer.rights'  => ['sq' => 'Të gjitha të drejtat e rezervuara.', 'en' => 'All rights reserved.'],
