@@ -3,6 +3,7 @@
 
 require_once __DIR__ . '/config.php'; // lidhja me databazen
 require_once __DIR__ . '/includes/functions.php'; // funksionet e pergjithshme
+require_once __DIR__ . '/includes/two_factor.php'; // 2FA me email
 
 session_start(); // startohet sessioni per te ruajtur user_id dhe tokenin CSRF
 
@@ -34,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // CSRF kundrej sulmeve
     if (!verify_csrf($_POST['csrf'] ?? '')) {
-        $errors[] = 'Kerkese e pavlefshme. Provo perseri.';
+        $errors[] = t('login.invalid_req');
 
     } else {
         $email     = trim($_POST['email'] ?? '');
@@ -61,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 // Kerko user-in ne databaze
                 $stmt = $conn->prepare(
-                    "SELECT id, username, password, email_verified, google_id FROM regjistrimi WHERE email = ? LIMIT 1"
+                    "SELECT id, username, email, password, email_verified, google_id, two_factor_enabled FROM regjistrimi WHERE email = ? LIMIT 1"
                 );
                 $stmt->bind_param("s", $email);
                 $stmt->execute();
@@ -83,11 +84,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Pastro tentativat e kesaj llogarie (tentativat e IP skadojne vete, qe mos te rivendosen me nje login te suksesshem)
                     clear_login_attempts($conn, $akey);
 
-                    // Rigjeneron session ID (mbrojtje session fixation) dhe ruan user-in + versionin e sesionit
-                    login_user($conn, (int)$user['id'], $user['username']);
+                    if ((int)$user['two_factor_enabled'] === 1) {
+                        // 2FA: passwordi eshte i sakte, por useri kyqet vetem pasi te shkruaje kodin nga emaili
+                        session_regenerate_id(true);
+                        $_SESSION['2fa_pending'] = [
+                            'id'       => (int)$user['id'],
+                            'username' => $user['username'],
+                            'email'    => $user['email'],
+                            'at'       => time(),
+                        ];
+                        $sent = two_fa_send_code($conn, (int)$user['id'], $user['email'], true);
+                        if ($sent !== true) {
+                            unset($_SESSION['2fa_pending']);
+                            $errors[] = t('2fa.mail_fail');
+                        } else {
+                            redirect('two_factor.php');
+                        }
+                    } else {
+                        // Rigjeneron session ID (mbrojtje session fixation) dhe ruan user-in + versionin e sesionit
+                        login_user($conn, (int)$user['id'], $user['username']);
 
-                    // Shko ne dashboard
-                    redirect('index.php');
+                        // Shko ne dashboard
+                        redirect('index.php');
+                    }
 
                 } else {
                     // Numro tentativen e gabuar (per IP dhe per llogari)
@@ -126,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="auth-box">
         <h1>Login</h1>
-        <p class="auth-sub">Mirë se u ktheve. Hyr për të parë detyrat e tua.</p>
+        <p class="auth-sub"><?= e(t('login.sub')) ?></p>
 
         <?php if ($success): ?>
             <div class="alert success"><p><?= e($success) ?></p></div>
@@ -149,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    placeholder="name@example.com"
                    autocomplete="email" required>
 
-            <label>Password</label>
+            <label><?= e(t('login.password')) ?></label>
             <input type="password" name="password"
                    placeholder="••••••••"
                    autocomplete="current-password" required>
@@ -158,11 +177,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <?php if ($needs_verify): ?>
-            <p><a href="resend_verification.php">Dergo përseri emailin e verifikimit</a></p>
+            <p><a href="resend_verification.php"><?= e(t('login.resend')) ?></a></p>
         <?php endif; ?>
-        <p><a href="forgot_password.php">Harrove passwordin?</a></p>
+        <p><a href="forgot_password.php"><?= e(t('login.forgot')) ?></a></p>
 
-        <div class="auth-divider"><span>ose</span></div>
+        <div class="auth-divider"><span><?= e(t('login.or')) ?></span></div>
 
         <!-- Login me Google -->
         <a href="google-callback.php" class="btn-google">
@@ -172,13 +191,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             </svg>
-            Vazhdo me Google
+            <?= e(t('login.google')) ?>
         </a>
 
         <p class="auth-legal">Duke vazhduar, pranon <a href="terms.php">Kushtet e Shërbimit</a> dhe <a href="privacy.php">Politikën e Privatësisë</a>.</p>
 
-        <p>Nuk ke llogari? <a href="signup.php">Regjistrohu</a></p>
-        <p><a href="index.php">&larr; Kthehu ne faqen kryesore</a></p>
+        <p><?= e(t('login.nouser')) ?> <a href="signup.php"><?= e(t('login.register')) ?></a></p>
+        <p><a href="index.php"><?= e(t('login.back')) ?></a></p>
     </div>
 
 </div><!-- /auth-layout -->

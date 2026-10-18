@@ -5,6 +5,7 @@
 require_once __DIR__ . '/config.php'; // lidhja me databazen
 require_once __DIR__ . '/includes/functions.php'; // funksionet e pergjithshme
 require_once __DIR__ . '/includes/mailer.php'; // emailet (ndryshimi i emailit)
+require_once __DIR__ . '/includes/two_factor.php'; // 2FA me email
 
 session_start(); // fillohet sessioni per te ruajtur user_id dhe tokenin CSRF
 require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne login.php
@@ -12,13 +13,13 @@ require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne logi
 $user_id = (int)$_SESSION['user_id']; // merr user_id nga sessioni
 
 // gabimet ndahen sipas seksionit, qe cdo karte te shfaqe vetem gabimet e veta
-$errors = ['general' => [], 'username' => [], 'email' => [], 'password' => [], 'google' => [], 'sessions' => [], 'delete' => []];
+$errors = ['general' => [], 'username' => [], 'email' => [], 'password' => [], 'google' => [], 'sessions' => [], 'twofa' => [], 'delete' => []];
 
 // Ngarkon te dhenat e userit nga databaza
 function load_user(mysqli $conn, int $user_id): ?array
 {
     $stmt = $conn->prepare(
-        "SELECT id, username, email, password, provider, google_id, created_at
+        "SELECT id, username, email, password, provider, google_id, created_at, two_factor_enabled
          FROM regjistrimi WHERE id = ? LIMIT 1"
     );
     $stmt->bind_param("i", $user_id);
@@ -43,6 +44,7 @@ $old_username   = $user['username'];
 // Llogarite vetem me Google nuk kane password per ta konfirmuar veprimet e rrezikshme; ne vend te kesaj
 // duhet te verifikojne perseri me Google (vlen 5 minuta, vendoset nga google-callback.php)
 $reauth_ok = !empty($_SESSION['reauth_until']) && (int)$_SESSION['reauth_until'] >= time();
+$twofa_pending = !empty($_SESSION['2fa_enable_pending']); // pret kodin nga emaili per ta aktivizuar 2FA
 $old_new_email  = ''; // qe emaili i shkruar mos te fshihet nese ka gabim
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -51,6 +53,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!verify_csrf($_POST['csrf'] ?? '')) {
         $errors['general'][] = 'Kerkese e pavlefshme. Provo perseri.';
+
+    // ---------- 0. 2FA (aktivizo / konfirmo kodin / çaktivizo) ----------
+    } elseif (in_array($action, ['2fa_start', '2fa_confirm', '2fa_disable', '2fa_cancel'], true)) {
+
+        $twofa_on = (int)$user['two_factor_enabled'] === 1;
+        try {
+            if ($is_google_only) {
+                $errors['twofa'][] = t('2fa.google_note');
+
+            } elseif ($action === '2fa_start' && !$twofa_on) {
+                $res = two_fa_send_code($conn, $user_id, $user['email']);
+                if ($res === true || $res === 'wait') {
+                    $_SESSION['2fa_enable_pending'] = true;
+                    $_SESSION['flash_success'] = t('2fa.confirm_enable');
+                    redirect('settings.php#two-factor');
+                }
+                $errors['twofa'][] = t('2fa.mail_fail');
+
+            } elseif ($action === '2fa_cancel') {
+                unset($_SESSION['2fa_enable_pending']);
+                redirect('settings.php#two-factor');
+
+            } elseif ($action === '2fa_confirm' && !$twofa_on && !empty($_SESSION['2fa_enable_pending'])) {
+                $res = two_fa_check_code($conn, $user_id, (string)($_POST['code'] ?? ''));
+                if ($res === 'ok') {
+                    $stmt = $conn->prepare("UPDATE regjistrimi SET two_factor_enabled = 1 WHERE id = ?");
+                    $stmt->bind_param("i", $user_id);
+                    $stmt->execute();
+                    $stmt->close();
+                    unset($_SESSION['2fa_enable_pending']);
+                    $_SESSION['flash_success'] = t('2fa.enabled_ok');
+                    redirect('settings.php#two-factor');
+                }
+                $errors['twofa'][] = ($res === 'locked') ? t('2fa.too_many') : t('2fa.bad_code');
+
+            } elseif ($action === '2fa_disable' && $twofa_on) {
+                $err = null;
+                if (check_current_password($conn, $user, (string)($_POST['password'] ?? ''), $err)) {
+                    $stmt = $conn->prepare("UPDATE regjistrimi SET two_factor_enabled = 0 WHERE id = ?");
+                    $stmt->bind_param("i", $user_id);
+                    $stmt->execute();
+                    $stmt->close();
+                    $_SESSION['flash_success'] = t('2fa.disabled_ok');
+                    redirect('settings.php#two-factor');
+                }
+                $errors['twofa'][] = $err;
+            }
+        } catch (mysqli_sql_exception $e) {
+            error_log("Settings 2FA error: " . $e->getMessage());
+            $errors['twofa'][] = t('2fa.mail_fail');
+        }
+        $twofa_pending = !empty($_SESSION['2fa_enable_pending']);
 
     // ---------- 1. Ndrysho username ----------
     } elseif ($action === 'username') {
@@ -385,6 +439,52 @@ $has_google   = !empty($user['google_id']);
                 <button type="submit" class="btn">Ruaj username</button>
             </div>
         </form>
+
+        <!-- ================= 2FA ================= -->
+        <?php $twofa_on = (int)$user['two_factor_enabled'] === 1; ?>
+        <section class="settings-card" id="two-factor">
+            <div class="settings-head">
+                <h2><?= e(t('2fa.set_title')) ?></h2>
+                <p><?= e($is_google_only ? t('2fa.google_note') : ($twofa_on ? t('2fa.set_on') : t('2fa.set_off'))) ?></p>
+            </div>
+
+            <?php if (!empty($errors['twofa'])): ?>
+                <div class="alert error">
+                    <?php foreach ($errors['twofa'] as $err): ?><p><?= e($err) ?></p><?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!$is_google_only): ?>
+                <?php if ($twofa_on): ?>
+                    <form method="POST" novalidate>
+                        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                        <input type="hidden" name="action" value="2fa_disable">
+                        <label for="twofaPw"><?= e(t('2fa.cur_pw')) ?></label>
+                        <input type="password" id="twofaPw" name="password" autocomplete="current-password" required>
+                        <div class="form-actions"><button type="submit" class="btn"><?= e(t('2fa.disable')) ?></button></div>
+                    </form>
+                <?php elseif ($twofa_pending): ?>
+                    <form method="POST" novalidate>
+                        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                        <input type="hidden" name="action" value="2fa_confirm">
+                        <label for="twofaCode"><?= e(t('2fa.code')) ?></label>
+                        <input type="text" id="twofaCode" name="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456" required>
+                        <div class="form-actions"><button type="submit" class="btn"><?= e(t('2fa.verify')) ?></button></div>
+                    </form>
+                    <form method="POST">
+                        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                        <input type="hidden" name="action" value="2fa_start">
+                        <p><button type="submit" class="link-btn"><?= e(t('2fa.resend')) ?></button></p>
+                    </form>
+                <?php else: ?>
+                    <form method="POST">
+                        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                        <input type="hidden" name="action" value="2fa_start">
+                        <div class="form-actions"><button type="submit" class="btn"><?= e(t('2fa.enable')) ?></button></div>
+                    </form>
+                <?php endif; ?>
+            <?php endif; ?>
+        </section>
 
         <!-- ================= EMAIL ================= -->
         <form method="POST" class="settings-card" id="email-card" novalidate>

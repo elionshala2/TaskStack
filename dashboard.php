@@ -13,8 +13,11 @@ $username = $_SESSION['username']; // ruan username nga sessioni
 $today = date('Y-m-d'); // ruan daten aktuale per kalendar per detyrat e vonuara ose te sotme, me format YYYY-MM-DD
 
 // URL per filtrat (status + kategori + kerkim)
-function dash_url(string $filter, string $cat, string $q = ''): string { 
+function dash_url(string $filter, string $cat, string $q = '', ?string $sortOverride = null): string { 
+    global $sort; // renditja aktuale ruhet ne cdo link
     $params = []; // array per te ruajtur parametrat e URL
+    $s = $sortOverride ?? ($sort ?? 'default');
+    if ($s !== 'default')  $params['sort']   = $s;
     if ($filter !== 'all') $params['filter'] = $filter; 
     if ($cat !== 'all')    $params['cat']    = $cat;
     if ($q !== '')         $params['q']      = $q;
@@ -22,9 +25,9 @@ function dash_url(string $filter, string $cat, string $q = ''): string {
 }
 
 $priority_labels = [ // array me etiketat e prioritetit
-    'low'    => 'Ulet',
-    'medium' => 'Mesatar',
-    'high'   => 'Larte',
+    'low'    => t('prio.low'),
+    'medium' => t('prio.medium'),
+    'high'   => t('prio.high'),
 ];
 
 // ---------- Kategorite e userit ----------
@@ -54,6 +57,12 @@ try {
 $filter = $_GET['filter'] ?? 'all';
 if (!in_array($filter, ['all', 'active', 'completed'], true)) {
     $filter = 'all';
+}
+
+// Renditja sipas afatit: default | due_asc (me afer -> me larg) | due_desc (me larg -> me afer)
+$sort = (string)($_GET['sort'] ?? 'default');
+if (!in_array($sort, ['default', 'due_asc', 'due_desc'], true)) {
+    $sort = 'default';
 }
 
 $cat_filter = 'all';   // 'all' | 'none' | '<id>'
@@ -134,10 +143,17 @@ if ($q !== '') {
     $params[] = $like;
 }
 
-$sql .= " ORDER BY t.is_completed ASC,
+// detyrat e kryera gjithmone ne fund; detyrat pa afat gjithmone pas atyre me afat
+if ($sort === 'due_asc') {
+    $sql .= " ORDER BY t.is_completed ASC, t.due_date IS NULL, t.due_date ASC, t.created_at DESC";
+} elseif ($sort === 'due_desc') {
+    $sql .= " ORDER BY t.is_completed ASC, t.due_date IS NULL, t.due_date DESC, t.created_at DESC";
+} else {
+    $sql .= " ORDER BY t.is_completed ASC,
                    FIELD(t.priority, 'high', 'medium', 'low'),
                    t.due_date IS NULL, t.due_date ASC,
                    t.created_at DESC";
+}
 
 $tasks = [];
 
@@ -156,7 +172,7 @@ try {
     $tasks = [];
 }
 
-$filters_active = ($filter !== 'all' || $cat_filter !== 'all' || $q !== '');
+$filters_active = ($filter !== 'all' || $cat_filter !== 'all' || $q !== '' || $sort !== 'default');
 
 // flash nga veprimet (add/edit/delete)
 $flash = '';
@@ -172,9 +188,9 @@ if (!empty($_SESSION['flash_error'])) {
 
 // pershendetje sipas ores
 $hour = (int)date('G');
-if ($hour < 12)      { $greet = 'Mirëmëngjesi'; }
-elseif ($hour < 18)  { $greet = 'Mirëdita'; }
-else                 { $greet = 'Mirëmbrëma'; }
+if ($hour < 12)      { $greet = t('dash.morning'); }
+elseif ($hour < 18)  { $greet = t('dash.afternoon'); }
+else                 { $greet = t('dash.evening'); }
 ?>
 <!DOCTYPE html>
 <html lang="sq">
@@ -195,9 +211,9 @@ else                 { $greet = 'Mirëmbrëma'; }
     <div class="dashboard-header">
         <div>
             <p class="eyebrow"><?= e($greet) ?>, <?= e($username) ?></p>
-            <h1>Detyrat e mia</h1>
+            <h1><?= e(t('dash.title')) ?></h1>
         </div>
-        <a href="tasks/add_task.php" class="btn">+ Shto detyrë</a>
+        <a href="tasks/add_task.php" class="btn"><?= e(t('dash.add')) ?></a>
     </div>
 
     <?php if ($flash): ?>
@@ -212,55 +228,65 @@ else                 { $greet = 'Mirëmbrëma'; }
         <div class="stats">
             <div class="stat">
                 <div class="stat-num"><?= $stats['total'] ?></div>
-                <div class="stat-label">Gjithsej</div>
+                <div class="stat-label"><?= e(t('dash.total')) ?></div>
             </div>
             <div class="stat">
                 <div class="stat-num"><?= $stats['active'] ?></div>
-                <div class="stat-label">Aktive</div>
+                <div class="stat-label"><?= e(t('dash.active')) ?></div>
             </div>
             <div class="stat <?= $stats['completed'] > 0 ? 'is-good' : '' ?>">
                 <div class="stat-num"><?= $stats['completed'] ?></div>
-                <div class="stat-label">Të kryera</div>
+                <div class="stat-label"><?= e(t('dash.done')) ?></div>
             </div>
             <div class="stat <?= $stats['overdue'] > 0 ? 'is-danger' : '' ?>">
                 <div class="stat-num"><?= $stats['overdue'] ?></div>
-                <div class="stat-label">Të vonuara</div>
+                <div class="stat-label"><?= e(t('dash.overdue')) ?></div>
             </div>
         </div>
         <div class="progress-wrap">
             <div class="progress"><span style="width: <?= $percent_done ?>%"></span></div>
-            <span><strong><?= $percent_done ?>%</strong> e kryer</span>
+            <span><strong><?= $percent_done ?>%</strong> <?= e(t('dash.percent')) ?></span>
         </div>
     <?php endif; ?>
 
     <div class="dash-toolbar">
 
         <form method="GET" action="dashboard.php" class="search-row">
+            <?php if ($sort !== 'default'): ?><input type="hidden" name="sort" value="<?= e($sort) ?>"><?php endif; ?>
             <?php if ($filter !== 'all'): ?><input type="hidden" name="filter" value="<?= e($filter) ?>"><?php endif; ?>
             <?php if ($cat_filter !== 'all'): ?><input type="hidden" name="cat" value="<?= e($cat_filter) ?>"><?php endif; ?>
             <input type="text" name="q" class="search-input" maxlength="100"
-                   placeholder="Kërko një detyrë..." value="<?= e($q) ?>">
+                   placeholder="<?= e(t('dash.search')) ?>" value="<?= e($q) ?>">
         </form>
 
         <div class="toolbar-row">
-            <span class="toolbar-label">Statusi</span>
+            <span class="toolbar-label"><?= e(t('dash.status')) ?></span>
             <div class="filters">
-                <a href="<?= e(dash_url('all', $cat_filter, $q)) ?>"       class="<?= $filter === 'all'       ? 'active' : '' ?>">Të gjitha<span class="n"><?= $stats['total'] ?></span></a>
-                <a href="<?= e(dash_url('active', $cat_filter, $q)) ?>"    class="<?= $filter === 'active'    ? 'active' : '' ?>">Aktive<span class="n"><?= $stats['active'] ?></span></a>
-                <a href="<?= e(dash_url('completed', $cat_filter, $q)) ?>" class="<?= $filter === 'completed' ? 'active' : '' ?>">Të kryera<span class="n"><?= $stats['completed'] ?></span></a>
+                <a href="<?= e(dash_url('all', $cat_filter, $q)) ?>"       class="<?= $filter === 'all'       ? 'active' : '' ?>"><?= e(t('dash.all')) ?><span class="n"><?= $stats['total'] ?></span></a>
+                <a href="<?= e(dash_url('active', $cat_filter, $q)) ?>"    class="<?= $filter === 'active'    ? 'active' : '' ?>"><?= e(t('dash.active')) ?><span class="n"><?= $stats['active'] ?></span></a>
+                <a href="<?= e(dash_url('completed', $cat_filter, $q)) ?>" class="<?= $filter === 'completed' ? 'active' : '' ?>"><?= e(t('dash.done')) ?><span class="n"><?= $stats['completed'] ?></span></a>
             </div>
 
             <?php if ($filters_active): ?>
-                <a href="dashboard.php" class="clear-filters">&#10005; Pastro filtrat</a>
+                <a href="dashboard.php" class="clear-filters">&#10005; <?= e(t('dash.clear')) ?></a>
             <?php endif; ?>
+        </div>
+
+        <div class="toolbar-row">
+            <span class="toolbar-label"><?= e(t('dash.sort')) ?></span>
+            <div class="filters">
+                <a href="<?= e(dash_url($filter, $cat_filter, $q, 'default')) ?>"  class="<?= $sort === 'default'  ? 'active' : '' ?>"><?= e(t('dash.sort_default')) ?></a>
+                <a href="<?= e(dash_url($filter, $cat_filter, $q, 'due_asc')) ?>"  class="<?= $sort === 'due_asc'  ? 'active' : '' ?>"><?= e(t('dash.sort_asc')) ?></a>
+                <a href="<?= e(dash_url($filter, $cat_filter, $q, 'due_desc')) ?>" class="<?= $sort === 'due_desc' ? 'active' : '' ?>"><?= e(t('dash.sort_desc')) ?></a>
+            </div>
         </div>
 
         <?php if (!empty($categories)): ?>
             <div class="toolbar-row">
-                <span class="toolbar-label">Kategoria</span>
+                <span class="toolbar-label"><?= e(t('dash.category')) ?></span>
                 <div class="cat-filters">
                     <a href="<?= e(dash_url($filter, 'all', $q)) ?>"
-                       class="cat-pill <?= $cat_filter === 'all' ? 'active' : '' ?>">Të gjitha</a>
+                       class="cat-pill <?= $cat_filter === 'all' ? 'active' : '' ?>"><?= e(t('dash.all')) ?></a>
 
                     <?php foreach ($categories as $cid => $cat): ?>
                         <a href="<?= e(dash_url($filter, (string)$cid, $q)) ?>"
@@ -276,7 +302,7 @@ else                 { $greet = 'Mirëmbrëma'; }
                         <a href="<?= e(dash_url($filter, 'none', $q)) ?>"
                            class="cat-pill <?= $cat_filter === 'none' ? 'active' : '' ?>">
                             <span class="dot"></span>
-                            Pa kategori
+                            <?= e(t('dash.nocat')) ?>
                             <span class="n"><?= $count_none ?></span>
                         </a>
                     <?php endif; ?>
@@ -289,12 +315,12 @@ else                 { $greet = 'Mirëmbrëma'; }
         <div class="empty-state">
             <?php if ($filters_active): ?>
                 <p class="empty-icon">&#128269;</p>
-                <p>Asnjë detyrë nuk përputhet me filtrat..</p>
-                <p><a href="dashboard.php">Pastro filtrat</a></p>
+                <p><?= e(t('dash.nomatch')) ?></p>
+                <p><a href="dashboard.php"><?= e(t('dash.clear')) ?></a></p>
             <?php else: ?>
                 <p class="empty-icon">&#128237;</p>
-                <p>Nuk ka asnjë detyrë.</p>
-                <p><a href="tasks/add_task.php">Shto detyrën e parë</a></p>
+                <p><?= e(t('dash.empty')) ?></p>
+                <p><a href="tasks/add_task.php"><?= e(t('dash.first')) ?></a></p>
             <?php endif; ?>
         </div>
     <?php else: ?>
@@ -322,7 +348,7 @@ else                 { $greet = 'Mirëmbrëma'; }
                     <form action="tasks/toggle_task.php" method="POST" class="task-toggle">
                         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
                         <input type="hidden" name="id"   value="<?= (int)$task['id'] ?>">
-                        <button type="submit" class="check-btn" title="Ndrysho statusin">
+                        <button type="submit" class="check-btn" title="<?= e(t('dash.toggle')) ?>">
                             <?= $isDone ? '&#10003;' : '' ?>
                         </button>
                     </form>
@@ -337,7 +363,7 @@ else                 { $greet = 'Mirëmbrëma'; }
                                 <a href="<?= e(dash_url($filter, (string)$taskCat['id'], $q)) ?>"
                                    class="task-cat"
                                    style="--cat: <?= e($taskCat['color']) ?>;"
-                                   title="Shfaq vetem kete kategori">
+                                   title="<?= e(t('dash.only_cat')) ?>">
                                     <span class="dot"></span><?= e($taskCat['name']) ?>
                                 </a>
                             <?php endif; ?>
@@ -351,7 +377,7 @@ else                 { $greet = 'Mirëmbrëma'; }
                             <?php if (!empty($task['due_date'])): ?>
                                 <span class="<?= $isOverdue ? 'overdue' : ($isToday ? 'today' : '') ?>">
                                     &#128197; <?= e(date('d.m.Y', strtotime($task['due_date']))) ?>
-                                    <?= $isOverdue ? ' (vonuar)' : ($isToday ? ' (sot)' : '') ?>
+                                    <?= e($isOverdue ? t('dash.late') : ($isToday ? t('dash.today') : '')) ?>
                                 </span>
                             <?php endif; ?>
                             <span>&#128338; <?= e(date('d.m.Y H:i', strtotime($task['created_at']))) ?></span>
@@ -359,13 +385,13 @@ else                 { $greet = 'Mirëmbrëma'; }
                     </div>
 
                     <div class="task-actions">
-                        <a href="tasks/edit_task.php?id=<?= (int)$task['id'] ?>" class="icon-btn" title="Edito">&#9999;&#65039;</a>
+                        <a href="tasks/edit_task.php?id=<?= (int)$task['id'] ?>" class="icon-btn" title="<?= e(t('dash.edit')) ?>">&#9999;&#65039;</a>
 
                         <form action="tasks/delete_task.php" method="POST" class="inline-form"
-                              data-confirm="Fshij kete detyre?">
+                              data-confirm="<?= e(t('dash.confirm_del')) ?>">
                             <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
                             <input type="hidden" name="id"   value="<?= (int)$task['id'] ?>">
-                            <button type="submit" class="icon-btn" title="Fshij">&#128465;&#65039;</button>
+                            <button type="submit" class="icon-btn" title="<?= e(t('dash.delete')) ?>">&#128465;&#65039;</button>
                         </form>
                     </div>
 
