@@ -194,6 +194,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?= e(t('login.google')) ?>
         </a>
 
+        <!-- Login me passkey (shfaqet vetem nese shfletuesi e mbeshtet; shiko assets/passkey.js) -->
+        <div class="passkey-box" id="passkeyLogin" hidden
+             data-endpoint="passkey_api.php" data-csrf="<?= e(csrf_token()) ?>"
+             data-msg-cancel="<?= e(t('pk.cancelled')) ?>" data-msg-fail="<?= e(t('pk.login_failed')) ?>">
+            <button type="button" class="btn-google" id="passkeyLoginBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M10.85 12.15 19 4"/><path d="m18 5 3 3"/><path d="m15 8 3 3"/></svg>
+                <?= e(t('pk.login_btn')) ?>
+            </button>
+            <p class="passkey-msg alert error" role="alert" hidden></p>
+        </div>
+
         <p class="auth-legal">Duke vazhduar, pranon <a href="terms.php">Kushtet e Shërbimit</a> dhe <a href="privacy.php">Politikën e Privatësisë</a>.</p>
 
         <p><?= e(t('login.nouser')) ?> <a href="signup.php"><?= e(t('login.register')) ?></a></p>
@@ -203,5 +214,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div><!-- /auth-layout -->
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
+<script src="assets/passkey.js"></script>
 </body>
 </html>

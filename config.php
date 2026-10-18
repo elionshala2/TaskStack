@@ -13,6 +13,10 @@ try {
     exit("Diqka shkoi gabim. Ju lutem provoni perseri me vone.");
 }
 
+// zona kohore e aplikacionit (datat e afateve, kujtesat). Ndryshoje me APP_TIMEZONE ne .env
+$tz = $_ENV['APP_TIMEZONE'] ?? 'Europe/Belgrade';
+date_default_timezone_set(in_array($tz, timezone_identifiers_list(), true) ? $tz : 'Europe/Belgrade');
+
 // gabimet e PHP nuk shfaqen ne faqe (vetem ne log); per zhvillim lokal vendos APP_DEBUG=1 ne .env
 ini_set('display_errors', ($_ENV['APP_DEBUG'] ?? '0') === '1' ? '1' : '0');
 ini_set('log_errors', '1');

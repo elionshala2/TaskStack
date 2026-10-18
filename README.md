@@ -6,7 +6,8 @@ Nje web aplikacion per menaxhimin e detyrave me autentifikim perdoruesi, i ndert
 
 1. Hap XAMPP (Apache + MySQL). Duhet PHP 8.0 ose me i ri.
 2. Vendose folderin e projektit ne `htdocs` me emrin `TaskStack` (kujdes shkronjat e medha, duhet te perputhen me `APP_URL`).
-3. Importo `database.sql` ne phpMyAdmin (krijon databazen `todolist` dhe tabelat).
+3. Krijo nje databaze bosh `todolist` (utf8mb4_unicode_ci) ne phpMyAdmin dhe importo `database.sql` ne te (krijon vetem tabelat, pa te dhena).
+   Ke tashme nje databaze nga versioni i vjeter? Mos e importo `database.sql`: bej backup dhe importo `migration.sql` (shiko "Perditesimi i nje instalimi ekzistues").
 4. Instalo Composer: https://getcomposer.org/
 5. Hap terminalin ne folderin e projektit dhe shkruaj `composer install`.
 6. Kopjo `.env.example` si `.env` dhe vendos te dhenat (shiko "Konfigurimi" me poshte).
@@ -21,6 +22,8 @@ Nje web aplikacion per menaxhimin e detyrave me autentifikim perdoruesi, i ndert
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | Per kyqjen me Google (opsionale). Krijo OAuth client ne Google Cloud Console dhe regjistro `GOOGLE_REDIRECT_URI` saktesisht si ne `.env`. |
 | `APP_DEBUG` | `0` (parazgjedhja) = gabimet e PHP nuk shfaqen ne faqe, vetem ne log. Vendos `1` vetem ne zhvillim lokal. |
 | `TRUSTED_PROXIES` | Opsionale. IP/CIDR te proxy-ve te besuara (p.sh. Cloudflare ose load balancer-i i hostit), te ndara me presje. Vetem kur kerkesa vjen nga nje prej tyre, `X-Forwarded-For` perdoret per IP e klientit (rate limiting). Lere bosh nese nuk ke proxy. |
+| `APP_TIMEZONE` | Opsionale. Zona kohore per afatet dhe kujtesat (parazgjedhja `Europe/Belgrade`). |
+| `CRON_KEY` | Opsionale. Te pakten 20 karaktere te rastesishme; aktivizon thirrjen e kujtesave me URL kur hosti nuk ka PHP CLI (shiko "Kujtesat e afateve"). Lere bosh nese perdor cron me CLI. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_FROM_NAME` | Per emailet (verifikim, reset password, njoftime sigurie). Me Gmail perdor "App Password" dhe port `587` me `SMTP_SECURE=tls` (ose `465` me `ssl`). |
 
 Mos e commit-o `.env` kurre (eshte ne `.gitignore`). Nese e ke ndare me dike, ndrysho sekretet.
@@ -55,6 +58,10 @@ Mos e commit-o `.env` kurre (eshte ne `.gitignore`). Nese e ke ndare me dike, nd
 - Verifikim emaili, reset password, ndryshim emaili me konfirmim, dhe njoftim sigurie me link "anulo ndryshimin" (12 ore)
 - Settings: ndrysho username, email, password, fshi llogarine
 - Faqet Privacy Policy dhe Terms of Service
+- **Passkeys (WebAuthn):** hyrje pa password me gjurme gishti, fytyre ose PIN te pajisjes. Shtohen/fshihen te Settings. Hyrja me passkey kerkon verifikim te userit ne pajisje, ndaj nuk kerkon kod 2FA nga emaili.
+- **Kujtesat e afateve:** nje email permbledhes ne dite me detyrat e vonuara (deri 7 dite pas afatit), ato me afat sot dhe nesër. Aktivizohen/çaktivizohen te Settings.
+- **Detyrat e vonuara:** banner ne krye te Dashboard-it, filtri "Te vonuara", rreshta te theksuar per te vonuarat/sot dhe etiketa "nesër".
+- Verifikim ne 2 hapa (2FA) me kod ne email, tema e erret/e çelet, gjuha SQ/EN, njoftimi per cookie
 
 ## Siguria
 
@@ -68,6 +75,30 @@ Mos e commit-o `.env` kurre (eshte ne `.gitignore`). Nese e ke ndare me dike, nd
 
 Shenim per zhvilluesit: mos shto `onclick`/`onsubmit` inline ose `<script>` inline, sepse CSP i bllokon. Per konfirmim para nje veprimi, vendos `data-confirm="Mesazhi"` ne `<form>` (e trajton `assets/script.js`).
 
+## Passkeys
+
+- Perdoret biblioteka `lbuchs/WebAuthn` v2.2.0 (MIT), e ngjitur ne `includes/lib/WebAuthn/`, ndaj nuk kerkon `composer`. Kerkon PHP 8.0+ me extension `openssl` dhe `mbstring`.
+- Passkey-t lidhen me domenin e `APP_URL` (rpId). Ne produksion `APP_URL` duhet te jete domeni i vertete me HTTPS; nese e ndryshon domenin, passkey-t e vjetra nuk punojne me. Ne `localhost` punon edhe pa HTTPS.
+- Ruhet vetem celesi publik (tabela `passkeys`). Shtimi dhe fshirja kerkojne passwordin aktual (llogarite vetem me Google verifikojne perseri me Google). Pas shtimit dergohet email njoftimi.
+- Mbrojtjet: sfida (challenge) njehereshe me skadim 5 minuta, kontrollimi i origjines dhe rpId, verifikim i detyrueshem i userit, kontrolli i signature counter (kunder klonimit), rate limiting si te login me password, email i paverifikuar nuk hyn.
+- Login pa shkruar email: browseri tregon passkey-t e ruajtura per faqen (discoverable credentials).
+
+## Kujtesat e afateve (cron)
+
+Emailet nuk dergohen vete: duhet nje cron job qe e ekzekuton `cron/send_reminders.php` **nje here ne dite** (p.sh. ora 08:00).
+
+- Me PHP CLI (rekomandohet): `0 8 * * * php /rruga/e/projektit/cron/send_reminders.php`
+- Pa CLI: vendos `CRON_KEY` ne `.env` dhe cakto cron me `curl -fsS "https://domaini-yt.com/cron/send_reminders.php?key=CRON_KEY"`. Pa `CRON_KEY` (ose me celes te gabuar) URL kthen 403.
+- Cdo user merr max 1 email ne dite; dergohet vetem per userat me email te verifikuar qe i kane te aktivizuara kujtesat. Nese SMTP deshton, provohet perseri ne ekzekutimin e radhes. Max 100 email per ekzekutim. Gjuha e emailit eshte gjuha qe useri ka zgjedhur ne faqe.
+
+## Perditesimi i nje instalimi ekzistues
+
+1. Bej backup te databazes (Export ne phpMyAdmin) dhe te file-ve.
+2. Ngarko file-t e rinj/ndryshuar. Nese perdor `composer`, nuk ka pakete te reja.
+3. Importo `migration.sql` ne databazen e aplikacionit. Mund te ekzekutohet disa here pa problem. Shton `two_factor_codes`, `passkeys`, kolonat e kujtesave dhe gjuhes, rregullon `created_at` (nuk ndryshon me me cdo perditesim), shton `UNIQUE` te `google_id`, fshin kategorite jetime dhe shton çelesat e huaj qe mungonin.
+4. Cakto cron-in per kujtesat (shiko me siper) dhe, nese perdor URL, shto `CRON_KEY` ne `.env`.
+5. Provo: hyr, shto nje passkey te Settings, dil dhe hyr me passkey.
+
 ## Folderat
 
 ### /includes
@@ -78,6 +109,12 @@ Shenim per zhvilluesit: mos shto `onclick`/`onsubmit` inline ose `<script>` inli
 - `footer.php` - footer-i
 - `auth-side.php` - paneli me preview ne faqet login/signup
 - `legal-config.php` - emri, emaili dhe data per Privacy Policy dhe Terms of Service
+- `passkeys.php` - helperat e passkeys (rpId, base64url, lista) dhe ngarkimi i bibliotekes
+- `reminders.php` - mbledhja e detyrave me afat, ndertimi i emailit dhe ekzekutimi i kujtesave
+- `lib/WebAuthn/` - biblioteka `lbuchs/WebAuthn` v2.2.0 (MIT)
+
+### /cron
+- `send_reminders.php` - dergon kujtesat e afateve (CLI ose URL me `CRON_KEY`)
 
 ### /tasks
 Filet per menaxhimin e detyrave dhe kategorive: shtimi, fshirja, editimi dhe toggle (`add_task.php`, `edit_task.php`, `delete_task.php`, `toggle_task.php`, `add_category.php`, `edit_category.php`, `delete_category.php`).
@@ -85,11 +122,14 @@ Filet per menaxhimin e detyrave dhe kategorive: shtimi, fshirja, editimi dhe tog
 ### /assets
 - `style.css` - gjithe stili i faqes
 - `script.js` - JS i vogel (password strength, kategorite qe hapen, konfirmimet `data-confirm`, alert qe zhduket)
+- `passkey.js` - login dhe regjistrim me passkey (WebAuthn), pa JS inline
 - `logo.png` - logoja
 
 ## Files
 - `config.php` - lidhja me databaze dhe leximi i `.env`
-- `database.sql` - struktura e databazes
+- `database.sql` - struktura e databazes per instalim te ri (pa te dhena)
+- `migration.sql` - perditeson nje databaze ekzistuese ne strukturen e re (idempotent)
+- `passkey_api.php` - endpoint JSON per passkeys (regjistrim dhe login)
 - `dashboard.php` - faqja ku dergohet useri pas login
 - `categories.php` - lista e kategorive
 - `index.php` - faqja kryesore
@@ -104,5 +144,7 @@ Filet per menaxhimin e detyrave dhe kategorive: shtimi, fshirja, editimi dhe tog
 - `LICENSE` - licenca (GNU GPL v3)
 
 ## Per ne te ardhmen
-- Login/Signup me Apple dhe Passkey
-- Autentifikim me dy faktore (2FA)
+- Login/Signup me Apple
+- Passkey gjate regjistrimit (tani shtohet te Settings pas krijimit te llogarise)
+- 2FA me aplikacion authenticator (TOTP), pervec kodit ne email
+- Detyra qe perseriten, eksport/import i detyrave
