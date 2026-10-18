@@ -3279,3 +3279,41 @@ html[data-theme="light"] .ts-deco::before { transform: translateX(-16px); opacit
 html:not([data-theme="light"]) .ts-deco::after { transform: translateX(18px); opacity: 0; }
 /* the knob travels the whole track with a trail while moving */
 .theme-form.is-switching .ts-track { box-shadow: 0 0 0 4px var(--accent-glow); }
+
+/* =====================================================================
+   Afatet: banner, filtri "te vonuara", rreshta te vonuar / sot
+   ===================================================================== */
+.deadline-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    margin: 0 0 18px; padding: 12px 16px;
+    font-size: 14px; color: var(--text);
+    background: rgba(245, 158, 11, 0.10);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 12px;
+}
+.deadline-banner.has-overdue { background: rgba(239, 68, 68, 0.10); border-color: rgba(239, 68, 68, 0.40); }
+.deadline-banner a { font-weight: 600; white-space: nowrap; }
+.filters a.filter-overdue .n { color: var(--red); }
+.task-item.is-overdue { border-color: rgba(239, 68, 68, 0.45); background: rgba(239, 68, 68, 0.06); }
+.task-item.is-today   { border-color: rgba(245, 158, 11, 0.40); }
+.task-meta .tomorrow  { color: var(--accent); font-weight: 600; }
+
+/* =====================================================================
+   Passkeys + kujtesat (Settings, Login)
+   ===================================================================== */
+[hidden] { display: none !important; }
+.passkey-box { margin-top: 10px; }
+.passkey-msg { margin: 10px 0 0; }
+.passkey-list { list-style: none; margin: 16px 0 6px; padding: 0; display: grid; gap: 10px; }
+.passkey-list li {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px;
+}
+.passkey-info { display: grid; gap: 2px; min-width: 0; }
+.passkey-info strong { color: var(--text); overflow-wrap: anywhere; }
+.passkey-info span { font-size: 12.5px; color: var(--text-dim); }
+.passkey-del { display: flex; align-items: center; gap: 8px; margin: 0; }
+.passkey-del input { width: 140px; margin: 0; padding: 8px 10px; }
+.passkey-empty { margin: 14px 0 0; font-size: 13.5px; color: var(--text-dim); }
+.check-row { display: flex; align-items: center; gap: 10px; margin: 16px 0 0; cursor: pointer; }
+.check-row input { width: auto; margin: 0; }

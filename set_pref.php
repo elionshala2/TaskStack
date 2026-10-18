@@ -25,6 +25,17 @@ if (verify_csrf($_POST['csrf'] ?? '')) {
         $value = $_POST['value'] ?? '';
         if (in_array($value, PREF_LANGS, true)) {
             set_pref_cookie('ts_lang', $value);
+            if (!empty($_SESSION['user_id'])) { // per emailet e kujtesave
+                try {
+                    $stmt = $conn->prepare("UPDATE regjistrimi SET language = ? WHERE id = ?");
+                    $uid  = (int)$_SESSION['user_id'];
+                    $stmt->bind_param("si", $value, $uid);
+                    $stmt->execute();
+                    $stmt->close();
+                } catch (mysqli_sql_exception $e) {
+                    error_log('Save language error: ' . $e->getMessage());
+                }
+            }
         }
     } elseif ($type === 'cookie_consent') {
         set_pref_cookie('ts_cookie_ok', '1');

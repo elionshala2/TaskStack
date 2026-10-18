@@ -6,6 +6,7 @@ require_once __DIR__ . '/config.php'; // lidhja me databazen
 require_once __DIR__ . '/includes/functions.php'; // funksionet e pergjithshme
 require_once __DIR__ . '/includes/mailer.php'; // emailet (ndryshimi i emailit)
 require_once __DIR__ . '/includes/two_factor.php'; // 2FA me email
+require_once __DIR__ . '/includes/passkeys.php'; // passkeys (WebAuthn)
 
 session_start(); // fillohet sessioni per te ruajtur user_id dhe tokenin CSRF
 require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne login.php
@@ -13,7 +14,7 @@ require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne logi
 $user_id = (int)$_SESSION['user_id']; // merr user_id nga sessioni
 
 // gabimet ndahen sipas seksionit, qe cdo karte te shfaqe vetem gabimet e veta
-$errors = ['general' => [], 'username' => [], 'email' => [], 'password' => [], 'google' => [], 'sessions' => [], 'twofa' => [], 'delete' => []];
+$errors = ['general' => [], 'username' => [], 'email' => [], 'password' => [], 'google' => [], 'sessions' => [], 'twofa' => [], 'delete' => [], 'passkeys' => [], 'reminders' => []];
 
 // Ngarkon te dhenat e userit nga databaza
 function load_user(mysqli $conn, int $user_id): ?array
@@ -45,6 +46,19 @@ $old_username   = $user['username'];
 // duhet te verifikojne perseri me Google (vlen 5 minuta, vendoset nga google-callback.php)
 $reauth_ok = !empty($_SESSION['reauth_until']) && (int)$_SESSION['reauth_until'] >= time();
 $twofa_pending = !empty($_SESSION['2fa_enable_pending']); // pret kodin nga emaili per ta aktivizuar 2FA
+// Kujtesat e afateve (kolona shtohet nga migration.sql; pa te, karta fshihet)
+$reminders_available = false;
+$reminders_on        = true;
+try {
+    $stmt = $conn->prepare("SELECT reminders_enabled FROM regjistrimi WHERE id = ? LIMIT 1");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $rrow = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if ($rrow) { $reminders_available = true; $reminders_on = (int)$rrow['reminders_enabled'] === 1; }
+} catch (mysqli_sql_exception $e) {
+    error_log('Settings reminders load: ' . $e->getMessage());
+}
 $old_new_email  = ''; // qe emaili i shkruar mos te fshihet nese ka gabim
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -105,6 +119,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors['twofa'][] = t('2fa.mail_fail');
         }
         $twofa_pending = !empty($_SESSION['2fa_enable_pending']);
+
+    // ---------- Kujtesat e afateve ----------
+    } elseif ($action === 'reminders' && $reminders_available) {
+        $on = !empty($_POST['reminders_enabled']) ? 1 : 0;
+        try {
+            $stmt = $conn->prepare("UPDATE regjistrimi SET reminders_enabled = ? WHERE id = ?");
+            $stmt->bind_param("ii", $on, $user_id);
+            $stmt->execute();
+            $stmt->close();
+            $_SESSION['flash_success'] = t('rem.saved');
+            redirect('settings.php#reminders');
+        } catch (mysqli_sql_exception $e) {
+            error_log('Settings reminders save: ' . $e->getMessage());
+            $errors['reminders'][] = t('2fa.mail_fail');
+        }
+
+    // ---------- Fshi nje passkey ----------
+    } elseif ($action === 'passkey_delete') {
+        $pid = (int)($_POST['passkey_id'] ?? 0);
+        $ok  = false;
+        if ($is_google_only) {
+            if ($reauth_ok) { $ok = true; } else { $errors['passkeys'][] = t('pk.need_reauth'); }
+        } else {
+            $err = null;
+            if (check_current_password($conn, $user, (string)($_POST['password'] ?? ''), $err)) { $ok = true; } else { $errors['passkeys'][] = $err; }
+        }
+        if ($ok) {
+            try {
+                $stmt = $conn->prepare("DELETE FROM passkeys WHERE id = ? AND user_id = ?");
+                $stmt->bind_param("ii", $pid, $user_id);
+                $stmt->execute();
+                $stmt->close();
+                unset($_SESSION['reauth_until']);
+                $_SESSION['flash_success'] = t('pk.deleted');
+                redirect('settings.php#passkeys');
+            } catch (mysqli_sql_exception $e) {
+                error_log('Settings passkey delete: ' . $e->getMessage());
+                $errors['passkeys'][] = t('pk.unavailable');
+            }
+        }
 
     // ---------- 1. Ndrysho username ----------
     } elseif ($action === 'username') {
@@ -486,7 +540,86 @@ $has_google   = !empty($user['google_id']);
             <?php endif; ?>
         </section>
 
-        <!-- ================= EMAIL ================= -->
+        <!-- ================= PASSKEYS ================= -->
+        <?php $pk_list = passkeys_for_user($conn, $user_id); ?>
+        <?php if ($pk_list !== null): ?>
+        <section class="settings-card" id="passkeys">
+            <div class="settings-head">
+                <h2><?= e(t('pk.set_title')) ?></h2>
+                <p><?= e(t('pk.set_desc')) ?></p>
+            </div>
+
+            <?php if (!empty($errors['passkeys'])): ?>
+                <div class="alert error">
+                    <?php foreach ($errors['passkeys'] as $err): ?><p><?= e($err) ?></p><?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($pk_list): ?>
+                <ul class="passkey-list">
+                    <?php foreach ($pk_list as $pk): ?>
+                        <li>
+                            <div class="passkey-info">
+                                <strong><?= e($pk['name']) ?></strong>
+                                <span><?= e(t('pk.created')) ?> <?= e(date('d.m.Y', strtotime($pk['created_at']))) ?>
+                                    &middot; <?= e(t('pk.last_used')) ?> <?= $pk['last_used_at'] ? e(date('d.m.Y', strtotime($pk['last_used_at']))) : e(t('pk.never')) ?></span>
+                            </div>
+                            <form method="POST" class="passkey-del" data-confirm="<?= e(t('pk.confirm_del')) ?>">
+                                <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                                <input type="hidden" name="action" value="passkey_delete">
+                                <input type="hidden" name="passkey_id" value="<?= (int)$pk['id'] ?>">
+                                <?php if (!$is_google_only): ?>
+                                    <input type="password" name="password" placeholder="<?= e(t('pk.pw_short')) ?>" autocomplete="current-password" required>
+                                <?php endif; ?>
+                                <button type="submit" class="btn-outline"><?= e(t('pk.delete')) ?></button>
+                            </form>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <p class="passkey-empty"><?= e(t('pk.none')) ?></p>
+            <?php endif; ?>
+
+            <p id="passkeyUnsupported" class="passkey-empty"><?= e(t('pk.unsupported')) ?></p>
+            <div id="passkeyRegister" hidden data-endpoint="passkey_api.php" data-csrf="<?= e(csrf_token()) ?>"
+                 data-msg-cancel="<?= e(t('pk.cancelled')) ?>" data-msg-fail="<?= e(t('pk.failed')) ?>">
+                <label for="passkeyName"><?= e(t('pk.name_label')) ?></label>
+                <input type="text" id="passkeyName" maxlength="60" placeholder="<?= e(t('pk.name_ph')) ?>" autocomplete="off">
+                <?php if (!$is_google_only): ?>
+                    <label for="passkeyPw"><?= e(t('pk.pw_label')) ?></label>
+                    <input type="password" id="passkeyPw" autocomplete="current-password">
+                <?php elseif (!$reauth_ok): ?>
+                    <p class="passkey-empty"><?= e(t('pk.need_reauth')) ?></p>
+                <?php endif; ?>
+                <p class="passkey-msg alert error" role="alert" hidden></p>
+                <div class="form-actions"><button type="button" class="btn" id="passkeyAddBtn"><?= e(t('pk.add_btn')) ?></button></div>
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <!-- ================= KUJTESAT ================= -->
+        <?php if ($reminders_available): ?>
+        <form method="POST" class="settings-card" id="reminders" novalidate>
+            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+            <input type="hidden" name="action" value="reminders">
+            <div class="settings-head">
+                <h2><?= e(t('rem.title')) ?></h2>
+                <p><?= e(t('rem.desc')) ?></p>
+            </div>
+            <?php if (!empty($errors['reminders'])): ?>
+                <div class="alert error">
+                    <?php foreach ($errors['reminders'] as $err): ?><p><?= e($err) ?></p><?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+            <label class="check-row">
+                <input type="checkbox" name="reminders_enabled" value="1" <?= $reminders_on ? 'checked' : '' ?>>
+                <span><?= e(t('rem.label')) ?></span>
+            </label>
+            <div class="form-actions"><button type="submit" class="btn"><?= e(t('rem.save')) ?></button></div>
+        </form>
+        <?php endif; ?>
+
+        <!-- ================= EMAIL =================
         <form method="POST" class="settings-card" id="email-card" novalidate>
             <input type="hidden" name="csrf"   value="<?= e(csrf_token()) ?>">
             <input type="hidden" name="action" value="email">
@@ -716,5 +849,6 @@ $has_google   = !empty($user['google_id']);
 </main>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
+<script src="assets/passkey.js"></script>
 </body>
 </html>
