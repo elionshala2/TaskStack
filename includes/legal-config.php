@@ -8,3 +8,5 @@ $legal_email   = 'taskstack2026@gmail.com'; // <- emaili ku te te kontaktojne us
 $legal_country = 'Kosovë';              // <- shteti, p.sh. ligjet e te cilit zbatohen
 $legal_updated = '13 tetor 2026';              // <- ndryshoje sa here qe i perditeson tekstet
 $legal_min_age = 16;                           // <- mosha minimale per te perdorur sherbimin
+$legal_updated_en = 'October 13, 2026';      // <- versioni anglisht i dates se mesiperme
+$legal_country_en = 'Kosovo';             // <- versioni anglisht i shtetit

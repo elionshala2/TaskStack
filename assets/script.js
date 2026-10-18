@@ -106,4 +106,68 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // ---------- 6. Navbar mobile: hap / mbyll menune ----------
+    var nav = document.getElementById('siteNav');
+    var burger = document.getElementById('navToggle');
+    if (nav && burger) {
+        function setNav(open) {
+            nav.classList.toggle('nav-open', open);
+            burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            document.body.classList.toggle('nav-locked', open);
+        }
+        burger.addEventListener('click', function () {
+            setNav(!nav.classList.contains('nav-open'));
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') setNav(false);
+        });
+        document.addEventListener('click', function (e) {
+            if (!nav.contains(e.target)) setNav(false);
+        });
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 900) setNav(false);
+        });
+    }
+
+    // ---------- 7. Theme switch: animacion para se te ruhet preferenca ----------
+    document.querySelectorAll('form.theme-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            var next = form.querySelector('input[name="value"]');
+            if (!next || form.dataset.busy) return;
+            e.preventDefault();
+            form.dataset.busy = '1';
+            var root = document.documentElement;
+            root.classList.add('theme-anim');
+            form.classList.add('is-switching');
+            root.setAttribute('data-theme', next.value);
+            var sw = form.querySelector('.theme-switch');
+            if (sw) sw.setAttribute('aria-checked', next.value === 'dark' ? 'true' : 'false');
+            setTimeout(function () { form.submit(); }, 650);
+        });
+    });
+
+    // ---------- 8. Language switch: pill-i rrshqet para se te ruhet gjuha ----------
+    document.querySelectorAll('form.lang-form').forEach(function (form) {
+        form.querySelectorAll('button[name="value"]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (form.dataset.busy) return;
+                var lang = btn.value;
+                if (form.getAttribute('data-lang') === lang) return;
+                form.dataset.busy = '1';
+                form.setAttribute('data-lang', lang);
+                form.querySelectorAll('button[name="value"]').forEach(function (b) {
+                    b.classList.toggle('is-on', b === btn);
+                });
+                document.body.classList.add('page-leaving');
+                var hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'value';
+                hidden.value = lang;
+                form.appendChild(hidden);
+                setTimeout(function () { form.submit(); }, 380);
+            });
+        });
+    });
 });

@@ -6,13 +6,16 @@ require_once __DIR__ . '/includes/functions.php'; // funksionet e pergjithshme
 require_once __DIR__ . '/includes/legal-config.php'; // emri, emaili, data
 
 session_start(); // navbar-i ka nevoje per sesionin
+
+// gjuha: ne EN shfaqim tekstin anglisht nga includes/legal/*_en.php
+$en = function_exists('pref_lang') && pref_lang() === 'en';
 ?>
 <!DOCTYPE html>
 <html lang="sq">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kushtet e Sherbimit - <?= e($legal_site) ?></title>
+    <title><?= $en ? 'Terms of Service' : 'Kushtet e Sherbimit' ?> - <?= e($legal_site) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -24,13 +27,14 @@ session_start(); // navbar-i ka nevoje per sesionin
 <main class="legal">
 
     <header class="legal-header">
-        <p class="eyebrow">Ligjore</p>
-        <h1>Kushtet e Sherbimit</h1>
-        <p class="legal-meta">Perditesuar se fundmi: <?= e($legal_updated) ?></p>
+        <p class="eyebrow"><?= $en ? 'Legal' : 'Ligjore' ?></p>
+        <h1><?= $en ? 'Terms of Service' : 'Kushtet e Sherbimit' ?></h1>
+        <p class="legal-meta"><?php if ($en): ?>Last updated: <?= e($legal_updated_en ?? $legal_updated) ?><?php else: ?>Perditesuar se fundmi: <?= e($legal_updated) ?><?php endif; ?></p>
     </header>
 
     <div class="legal-layout">
 
+<?php if ($en): require __DIR__ . '/includes/legal/terms_en.php'; else: ?>
         <nav class="legal-toc" aria-label="Permbajtja">
             <a href="#pranimi">1. Pranimi i kushteve</a>
             <a href="#sherbimi">2. Sherbimi</a>
@@ -103,6 +107,7 @@ session_start(); // navbar-i ka nevoje per sesionin
             <p>Per pyetje rreth ketyre kushteve: <a href="mailto:<?= e($legal_email) ?>"><?= e($legal_email) ?></a>.</p>
 
         </article>
+<?php endif; ?>
     </div>
 </main>
 
