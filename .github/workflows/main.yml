@@ -1,0 +1,17 @@
+name: TaskStack Daily Reminders
+
+on:
+  schedule:
+    - cron: '0 18 * * *' # Runs every day at 18:00 UTC (8:00 PM GMT+2)
+  workflow_dispatch: # Allows manual testing from the Actions tab
+
+jobs:
+  run-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Cron Request
+        env:
+          CRON_KEY: ${{ secrets.CRON_KEY }}
+        run: |
+          curl -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0" \
+               "https://taskstack.wuaze.com/cron/send_reminders.php?key=${{ secrets.CRON_KEY }}"
