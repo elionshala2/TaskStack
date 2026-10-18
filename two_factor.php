@@ -81,10 +81,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 <?php require_once __DIR__ . '/includes/navbar.php'; ?>
 
-<div class="auth-layout">
-    <?php require_once __DIR__ . '/includes/auth-side.php'; ?>
+<main class="otp-page">
+    <div class="auth-box otp-box">
+        <div class="otp-icon" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.2 8.2 8 9 4.8-.8 8-4.5 8-9V6l-8-3z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
 
-    <div class="auth-box">
         <h1><?= e(t('2fa.title')) ?></h1>
         <p class="auth-sub"><?= e(t('2fa.sub', ['email' => mask_email($pending['email'])])) ?></p>
 
@@ -100,25 +102,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST" novalidate>
             <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
             <input type="hidden" name="action" value="verify">
-            <label><?= e(t('2fa.code')) ?></label>
-            <input type="text" name="code" inputmode="numeric" pattern="[0-9]*" maxlength="6"
-                   autocomplete="one-time-code" placeholder="123456" autofocus required>
+
+            <label for="otpCode"><?= e(t('2fa.code')) ?></label>
+            <input type="text" id="otpCode" name="code" class="otp-input"
+                   inputmode="numeric" pattern="[0-9]*" maxlength="6"
+                   autocomplete="one-time-code" enterkeyhint="done"
+                   placeholder="······" autofocus required>
+
             <button type="submit"><?= e(t('2fa.verify')) ?></button>
         </form>
 
-        <form method="POST">
-            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-            <input type="hidden" name="action" value="resend">
-            <p><button type="submit" class="link-btn"><?= e(t('2fa.resend')) ?></button></p>
-        </form>
-
-        <form method="POST">
-            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-            <input type="hidden" name="action" value="cancel">
-            <p><button type="submit" class="link-btn"><?= e(t('2fa.cancel')) ?></button></p>
-        </form>
+        <div class="otp-actions">
+            <form method="POST">
+                <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                <input type="hidden" name="action" value="resend">
+                <button type="submit"><?= e(t('2fa.resend')) ?></button>
+            </form>
+            <form method="POST">
+                <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                <input type="hidden" name="action" value="cancel">
+                <button type="submit"><?= e(t('2fa.cancel')) ?></button>
+            </form>
+        </div>
     </div>
-</div>
+</main>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
 </body>

@@ -3317,3 +3317,99 @@ html:not([data-theme="light"]) .ts-deco::after { transform: translateX(18px); op
 .passkey-empty { margin: 14px 0 0; font-size: 13.5px; color: var(--text-dim); }
 .check-row { display: flex; align-items: center; gap: 10px; margin: 16px 0 0; cursor: pointer; }
 .check-row input { width: auto; margin: 0; }
+
+/* =========================================================
+   2FA (two_factor.php) - karte e vetme e qendruar
+   ========================================================= */
+.otp-page {
+    display: flex;
+    justify-content: center;
+    padding: 0 16px;
+}
+
+.auth-box.otp-box {
+    max-width: 440px;
+    margin: 56px auto 64px;
+    text-align: center;
+}
+
+.otp-icon {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 18px;
+    border-radius: 18px;
+    color: var(--accent-2);
+    background: var(--surface-2);
+    border: 1px solid var(--border-hi);
+    box-shadow: 0 0 36px var(--accent-glow);
+}
+
+.auth-box.otp-box h1,
+.auth-box.otp-box .auth-sub { text-align: center; }
+
+.auth-box.otp-box .auth-sub { margin-bottom: 22px; }
+
+.auth-box.otp-box .alert { text-align: left; }
+
+.auth-box.otp-box label {
+    display: block;
+    text-align: left;
+    margin-top: 6px;
+}
+
+.auth-box .otp-input {
+    width: 100%;
+    padding: 14px 14px 14px calc(14px + 0.45em);
+    font-family: 'Space Grotesk', 'Inter', monospace;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.45em;
+    text-align: center;
+    background-image: none;
+    border-radius: 14px;
+}
+
+.auth-box .otp-input::placeholder {
+    letter-spacing: 0.45em;
+    color: var(--text-dim);
+    opacity: 0.6;
+}
+
+.otp-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+
+.otp-actions form { margin: 0; }
+
+.auth-box .otp-actions button[type="submit"] {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 11px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text-soft);
+    background: var(--surface-2);
+    border: 1px solid var(--border-hi);
+    box-shadow: none;
+}
+
+.auth-box .otp-actions button[type="submit"]:hover {
+    color: var(--text);
+    filter: none;
+    border-color: var(--accent);
+}
+
+@media (max-width: 420px) {
+    .auth-box.otp-box { margin-top: 32px; }
+    .auth-box .otp-input { font-size: 26px; letter-spacing: 0.35em; padding-left: calc(14px + 0.35em); }
+    .otp-actions { grid-template-columns: 1fr; }
+}
