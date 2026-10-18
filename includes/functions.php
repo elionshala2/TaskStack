@@ -69,6 +69,16 @@ function login_user($conn, int $user_id, string $username): void {
     $_SESSION['user_id']  = $user_id;
     $_SESSION['username'] = $username;
     $_SESSION['sv']       = $sv;
+    // ruan gjuhen e zgjedhur (per emailet e kujtesave); nuk e prish login-in nese kolona mungon
+    try {
+        $lang = pref_lang();
+        $stmt = $conn->prepare("UPDATE regjistrimi SET language = ? WHERE id = ?");
+        $stmt->bind_param("si", $lang, $user_id);
+        $stmt->execute();
+        $stmt->close();
+    } catch (mysqli_sql_exception $e) {
+        error_log('Save language error: ' . $e->getMessage());
+    }
     unset($_SESSION['reauth_until'], $_SESSION['google_reauth'], $_SESSION['google_link']);
 }
 
@@ -259,6 +269,11 @@ function maybe_cleanup($conn): void {
                         AND created_at < (NOW() - INTERVAL 3 DAY)");
     } catch (mysqli_sql_exception $e) {
         error_log("Cleanup error: " . $e->getMessage());
+    }
+    try {
+        $conn->query("DELETE FROM two_factor_codes WHERE expires_at < (NOW() - INTERVAL 1 DAY)");
+    } catch (mysqli_sql_exception $e) {
+        error_log("Cleanup 2FA error: " . $e->getMessage());
     }
 }
 

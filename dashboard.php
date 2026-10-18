@@ -10,7 +10,8 @@ require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne logi
 $user_id  = $_SESSION['user_id']; // ruan user_id nga sessioni
 $username = $_SESSION['username']; // ruan username nga sessioni
 
-$today = date('Y-m-d'); // ruan daten aktuale per kalendar per detyrat e vonuara ose te sotme, me format YYYY-MM-DD
+$today    = date('Y-m-d');
+$tomorrow = date('Y-m-d', strtotime('+1 day')); // ruan daten aktuale per kalendar per detyrat e vonuara ose te sotme, me format YYYY-MM-DD
 
 // URL per filtrat (status + kategori + kerkim)
 function dash_url(string $filter, string $cat, string $q = '', ?string $sortOverride = null): string { 
@@ -55,7 +56,7 @@ try {
 
 // ---------- Filtrat nga URL ----------
 $filter = $_GET['filter'] ?? 'all';
-if (!in_array($filter, ['all', 'active', 'completed'], true)) {
+if (!in_array($filter, ['all', 'active', 'completed', 'overdue'], true)) {
     $filter = 'all';
 }
 
@@ -79,7 +80,7 @@ if (mb_strlen($q) > 100) {
 }
 
 // ---------- Statistikat ----------
-$stats = ['total' => 0, 'active' => 0, 'completed' => 0, 'overdue' => 0];
+$stats = ['total' => 0, 'active' => 0, 'completed' => 0, 'overdue' => 0, 'today' => 0];
 $count_by_cat = [];
 $count_none   = 0;
 
@@ -97,6 +98,8 @@ try {
             $stats['active']++;
             if (!empty($row['due_date']) && $row['due_date'] < $today) {
                 $stats['overdue']++;
+            } elseif (!empty($row['due_date']) && $row['due_date'] === $today) {
+                $stats['today']++;
             }
         }
         if ($row['category_id'] === null) {
@@ -125,6 +128,10 @@ if ($filter === 'active') {
     $sql .= " AND t.is_completed = 0";
 } elseif ($filter === 'completed') {
     $sql .= " AND t.is_completed = 1";
+} elseif ($filter === 'overdue') {
+    $sql .= " AND t.is_completed = 0 AND t.due_date IS NOT NULL AND t.due_date < ?";
+    $types   .= "s";
+    $params[] = $today;
 }
 
 if ($cat_filter === 'none') {
@@ -224,6 +231,19 @@ else                 { $greet = t('dash.evening'); }
         <div class="alert error"><p><?= e($flash_error) ?></p></div>
     <?php endif; ?>
 
+    <?php if ($stats['overdue'] > 0 || $stats['today'] > 0): ?>
+        <div class="deadline-banner <?= $stats['overdue'] > 0 ? 'has-overdue' : '' ?>" role="status">
+            <span class="deadline-text">
+                <?php if ($stats['overdue'] > 0): ?><strong><?= (int)$stats['overdue'] ?></strong> <?= e(t('dash.alert_overdue')) ?><?php endif; ?>
+                <?php if ($stats['overdue'] > 0 && $stats['today'] > 0): ?> &middot; <?php endif; ?>
+                <?php if ($stats['today'] > 0): ?><strong><?= (int)$stats['today'] ?></strong> <?= e(t('dash.alert_today')) ?><?php endif; ?>
+            </span>
+            <?php if ($stats['overdue'] > 0 && $filter !== 'overdue'): ?>
+                <a href="<?= e(dash_url('overdue', 'all')) ?>"><?= e(t('dash.alert_view')) ?></a>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
     <?php if ($stats['total'] > 0): ?>
         <div class="stats">
             <div class="stat">
@@ -265,6 +285,7 @@ else                 { $greet = t('dash.evening'); }
                 <a href="<?= e(dash_url('all', $cat_filter, $q)) ?>"       class="<?= $filter === 'all'       ? 'active' : '' ?>"><?= e(t('dash.all')) ?><span class="n"><?= $stats['total'] ?></span></a>
                 <a href="<?= e(dash_url('active', $cat_filter, $q)) ?>"    class="<?= $filter === 'active'    ? 'active' : '' ?>"><?= e(t('dash.active')) ?><span class="n"><?= $stats['active'] ?></span></a>
                 <a href="<?= e(dash_url('completed', $cat_filter, $q)) ?>" class="<?= $filter === 'completed' ? 'active' : '' ?>"><?= e(t('dash.done')) ?><span class="n"><?= $stats['completed'] ?></span></a>
+                <a href="<?= e(dash_url('overdue', $cat_filter, $q)) ?>"   class="filter-overdue <?= $filter === 'overdue'   ? 'active' : '' ?>"><?= e(t('dash.overdue')) ?><span class="n"><?= $stats['overdue'] ?></span></a>
             </div>
 
             <?php if ($filters_active): ?>
@@ -334,6 +355,9 @@ else                 { $greet = t('dash.evening'); }
                     $isToday = !$isDone
                         && !empty($task['due_date'])
                         && $task['due_date'] === $today;
+                    $isTomorrow = !$isDone
+                        && !empty($task['due_date'])
+                        && $task['due_date'] === $tomorrow;
 
                     $taskCat = null;
                     if ($task['category_id'] !== null && isset($categories[(int)$task['category_id']])) {
@@ -343,7 +367,7 @@ else                 { $greet = t('dash.evening'); }
                     $prio = (string)$task['priority'];
                     $prioLabel = $priority_labels[$prio] ?? $prio;
                 ?>
-                <li class="task-item <?= $isDone ? 'completed' : '' ?>">
+                <li class="task-item <?= $isDone ? 'completed' : '' ?> <?= $isOverdue ? 'is-overdue' : '' ?> <?= $isToday ? 'is-today' : '' ?>">
 
                     <form action="tasks/toggle_task.php" method="POST" class="task-toggle">
                         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
@@ -375,9 +399,9 @@ else                 { $greet = t('dash.evening'); }
 
                         <div class="task-meta">
                             <?php if (!empty($task['due_date'])): ?>
-                                <span class="<?= $isOverdue ? 'overdue' : ($isToday ? 'today' : '') ?>">
+                                <span class="<?= $isOverdue ? 'overdue' : ($isToday ? 'today' : ($isTomorrow ? 'tomorrow' : '')) ?>">
                                     &#128197; <?= e(date('d.m.Y', strtotime($task['due_date']))) ?>
-                                    <?= e($isOverdue ? t('dash.late') : ($isToday ? t('dash.today') : '')) ?>
+                                    <?= e($isOverdue ? t('dash.late') : ($isToday ? t('dash.today') : ($isTomorrow ? t('dash.tomorrow') : ''))) ?>
                                 </span>
                             <?php endif; ?>
                             <span>&#128338; <?= e(date('d.m.Y H:i', strtotime($task['created_at']))) ?></span>
