@@ -32,6 +32,10 @@ if (!defined('APP_SESSION_READY')) {
         ]);
     }
 
+    // shton data-theme + lang ne <html> sipas cookie-ve (tema/gjuha) para se faqja te dergohet
+    require_once __DIR__ . '/prefs.php';
+    ob_start('prefs_html_filter');
+
     if (!headers_sent()) {
         header('X-Content-Type-Options: nosniff');      // shfletuesi nuk "hamendeson" llojin e file-ve
         header('X-Frame-Options: DENY');                // faqja nuk hapet brenda iframe (clickjacking)
