@@ -28,7 +28,7 @@ $cur_lang   = function_exists('pref_lang') ? pref_lang() : 'sq';
             <span>TaskStack</span>
         </a>
         <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu"
-                aria-label="Menu">
+            aria-label="Menu">
             <span class="nav-toggle-bars" aria-hidden="true"></span>
         </button>
     </div>
@@ -36,12 +36,12 @@ $cur_lang   = function_exists('pref_lang') ? pref_lang() : 'sq';
     <div class="nav-menu" id="navMenu">
         <div class="nav-main">
             <a href="<?= $prefix ?>index.php"
-               class="btn-outline <?= $current === 'index.php' ? 'btn-active' : '' ?>"><?= e(t('nav.home')) ?></a>
+                class="btn-outline <?= $current === 'index.php' ? 'btn-active' : '' ?>"><?= e(t('nav.home')) ?></a>
             <?php if ($isLoggedIn): ?>
                 <a href="<?= $prefix ?>dashboard.php"
-                   class="btn-outline <?= in_array($current, $task_pages) ? 'btn-active' : '' ?>"><?= e(t('nav.dashboard')) ?></a>
+                    class="btn-outline <?= in_array($current, $task_pages) ? 'btn-active' : '' ?>"><?= e(t('nav.dashboard')) ?></a>
                 <a href="<?= $prefix ?>categories.php"
-                   class="btn-outline <?= in_array($current, $cat_pages) ? 'btn-active' : '' ?>"><?= e(t('nav.categories')) ?></a>
+                    class="btn-outline <?= in_array($current, $cat_pages) ? 'btn-active' : '' ?>"><?= e(t('nav.categories')) ?></a>
             <?php endif; ?>
         </div>
 
@@ -53,13 +53,18 @@ $cur_lang   = function_exists('pref_lang') ? pref_lang() : 'sq';
                     <input type="hidden" name="value" value="<?= $cur_theme === 'dark' ? 'light' : 'dark' ?>">
                     <input type="hidden" name="next" value="<?= e($pref_next) ?>">
                     <button type="submit" class="theme-switch" role="switch" aria-checked="<?= $cur_theme === 'dark' ? 'true' : 'false' ?>"
-                            title="<?= e($cur_theme === 'dark' ? t('nav.theme_light') : t('nav.theme_dark')) ?>"
-                            aria-label="<?= e($cur_theme === 'dark' ? t('nav.theme_light') : t('nav.theme_dark')) ?>">
+                        title="<?= e($cur_theme === 'dark' ? t('nav.theme_light') : t('nav.theme_dark')) ?>"
+                        aria-label="<?= e($cur_theme === 'dark' ? t('nav.theme_light') : t('nav.theme_dark')) ?>">
                         <span class="ts-track" aria-hidden="true">
                             <span class="ts-deco"></span>
                             <span class="ts-knob">
-                                <svg class="ts-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg>
-                                <svg class="ts-moon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20.3 14.6A8.5 8.5 0 0 1 9.4 3.7a.6.6 0 0 0-.8-.7A9.5 9.5 0 1 0 21 15.4a.6.6 0 0 0-.7-.8z"/></svg>
+                                <svg class="ts-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                                    <circle cx="12" cy="12" r="4.2" fill="currentColor" />
+                                    <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6" />
+                                </svg>
+                                <svg class="ts-moon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                    <path d="M20.3 14.6A8.5 8.5 0 0 1 9.4 3.7a.6.6 0 0 0-.8-.7A9.5 9.5 0 1 0 21 15.4a.6.6 0 0 0-.7-.8z" />
+                                </svg>
                             </span>
                         </span>
                     </button>
@@ -76,16 +81,16 @@ $cur_lang   = function_exists('pref_lang') ? pref_lang() : 'sq';
             <?php if ($isLoggedIn): ?>
                 <span class="nav-user"><?= e(t('nav.hello')) ?>, <strong><?= e($username) ?></strong></span>
                 <a href="<?= $prefix ?>settings.php"
-                   class="btn-outline <?= $current === 'settings.php' ? 'btn-active' : '' ?>"><?= e(t('nav.settings')) ?></a>
+                    class="btn-outline <?= $current === 'settings.php' ? 'btn-active' : '' ?>"><?= e(t('nav.settings')) ?></a>
                 <form method="POST" action="<?= $prefix ?>logout.php" class="logout-form">
                     <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
                     <button type="submit" class="btn-outline"><?= e(t('nav.logout')) ?></button>
                 </form>
             <?php else: ?>
                 <a href="<?= $prefix ?>login.php"
-                   class="btn-outline <?= $current === 'login.php' ? 'btn-active' : '' ?>"><?= e(t('nav.login')) ?></a>
+                    class="btn-outline <?= $current === 'login.php' ? 'btn-active' : '' ?>"><?= e(t('nav.login')) ?></a>
                 <a href="<?= $prefix ?>signup.php"
-                   class="btn-outline <?= $current === 'signup.php' ? 'btn-active' : '' ?>"><?= e(t('nav.signup')) ?></a>
+                    class="btn-outline <?= $current === 'signup.php' ? 'btn-active' : '' ?>"><?= e(t('nav.signup')) ?></a>
             <?php endif; ?>
         </div>
     </div>

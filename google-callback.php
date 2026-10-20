@@ -112,11 +112,9 @@ if (!empty($_SESSION['user_id'])) {
 
         $_SESSION['google_link']   = $start === 'link'   ? $uid : 0;
         $_SESSION['google_reauth'] = $start === 'reauth' ? $uid : 0;
-
     } elseif ((int)($_SESSION['google_link'] ?? 0) !== $uid && (int)($_SESSION['google_reauth'] ?? 0) !== $uid) {
         redirect('index.php'); // i kyqur dhe jo ne link/reauth mode
         exit;
-
     } elseif (!isset($_GET['code']) && !isset($_GET['error'])) {
         unset($_SESSION['google_link'], $_SESSION['google_reauth']); // mode i vjeter, pastroje
         redirect('settings.php');
@@ -240,10 +238,8 @@ if ($linking_user > 0) {
 
         if ($other && (int)$other['id'] !== $linking_user) {
             $_SESSION['flash_error'] = 'Ky Google eshte i lidhur me nje llogari tjeter TaskStack.';
-
         } elseif ($other) {
             $_SESSION['flash_success'] = 'Google eshte tashme i lidhur me llogarine tende.';
-
         } else {
             // Emaili i llogarise behet emaili i verifikuar i Google (nuk mbetet nje email i rremë).
             // Nese ky email i perket nje llogarie tjeter TaskStack, nuk lidhet.
@@ -322,7 +318,6 @@ try {
                 $stmt->execute();
                 $stmt->close();
                 invalidate_user_tokens($conn, (int)$byEmail['id'], 'verify');
-
             } else {
                 // Lidh Google ID me llogarine ekzistuese (e verifikuar)
                 $stmt = $conn->prepare("UPDATE regjistrimi SET google_id = ? WHERE id = ?");
@@ -361,7 +356,6 @@ try {
 
     redirect('index.php');
     exit;
-
 } catch (mysqli_sql_exception $e) {
     error_log('Google login error: ' . $e->getMessage());
     google_fail('Diqka shkoi gabim. Provo perseri.');

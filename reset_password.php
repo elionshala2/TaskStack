@@ -69,7 +69,6 @@ if ($valid && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $_SESSION['flash_success'] = 'Passwordi u ndryshua me sukses! Tani mund te kyqesh.';
                 redirect('login.php');
-
             } catch (mysqli_sql_exception $e) {
                 error_log("Reset password error: " . $e->getMessage());
                 $errors[] = 'Diqka shkoi gabim. Provo perseri.';
@@ -80,6 +79,7 @@ if ($valid && $_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="sq">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -89,52 +89,56 @@ if ($valid && $_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/style.css">
 </head>
+
 <body>
-<?php require_once __DIR__ . '/includes/navbar.php'; ?>
+    <?php require_once __DIR__ . '/includes/navbar.php'; ?>
 
-<div class="auth-layout">
+    <div class="auth-layout">
 
-    <?php require_once __DIR__ . '/includes/auth-side.php'; ?>
+        <?php require_once __DIR__ . '/includes/auth-side.php'; ?>
 
-    <div class="auth-box">
-        <h1>Password i ri</h1>
+        <div class="auth-box">
+            <h1>Password i ri</h1>
 
-        <?php if (!$valid): ?>
-            <div class="alert error"><p>Ky link eshte i pavlefshem, ka skaduar ose eshte perdorur tashme.</p></div>
-            <p><a href="forgot_password.php">Kerko nje link te ri</a></p>
-            <p><a href="login.php">&larr; Kthehu te Login</a></p>
-
-        <?php else: ?>
-            <p class="auth-sub">Zgjidh nje password te ri per llogarine tende.</p>
-
-            <?php if (!empty($errors)): ?>
+            <?php if (!$valid): ?>
                 <div class="alert error">
-                    <?php foreach ($errors as $err): ?><p><?= e($err) ?></p><?php endforeach; ?>
+                    <p>Ky link eshte i pavlefshem, ka skaduar ose eshte perdorur tashme.</p>
                 </div>
+                <p><a href="forgot_password.php">Kerko nje link te ri</a></p>
+                <p><a href="login.php">&larr; Kthehu te Login</a></p>
+
+            <?php else: ?>
+                <p class="auth-sub">Zgjidh nje password te ri per llogarine tende.</p>
+
+                <?php if (!empty($errors)): ?>
+                    <div class="alert error">
+                        <?php foreach ($errors as $err): ?><p><?= e($err) ?></p><?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <form method="POST" id="signupForm" novalidate>
+                    <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="token" value="<?= e($token) ?>">
+
+                    <label>Password i ri</label>
+                    <input type="password" name="password" id="password" maxlength="72"
+                        placeholder="••••••••" autocomplete="new-password" required>
+                    <div class="strength"><span id="strengthBar"></span></div>
+                    <small class="hint" id="pwHint">Min 8 karaktere, shkronje dhe numer.</small>
+
+                    <label>Konfirmo password-in</label>
+                    <input type="password" name="cpassword" id="cpassword" maxlength="72"
+                        placeholder="••••••••" autocomplete="new-password" required>
+                    <small class="hint" id="matchHint"></small>
+
+                    <button type="submit">Ruaj passwordin</button>
+                </form>
             <?php endif; ?>
+        </div>
 
-            <form method="POST" id="signupForm" novalidate>
-                <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-                <input type="hidden" name="token" value="<?= e($token) ?>">
-
-                <label>Password i ri</label>
-                <input type="password" name="password" id="password" maxlength="72"
-                       placeholder="••••••••" autocomplete="new-password" required>
-                <div class="strength"><span id="strengthBar"></span></div>
-                <small class="hint" id="pwHint">Min 8 karaktere, shkronje dhe numer.</small>
-
-                <label>Konfirmo password-in</label>
-                <input type="password" name="cpassword" id="cpassword" maxlength="72"
-                       placeholder="••••••••" autocomplete="new-password" required>
-                <small class="hint" id="matchHint"></small>
-
-                <button type="submit">Ruaj passwordin</button>
-            </form>
-        <?php endif; ?>
     </div>
 
-</div>
-
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
+    <?php require_once __DIR__ . '/includes/footer.php'; ?>
 </body>
+
 </html>

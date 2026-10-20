@@ -94,7 +94,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $_SESSION['flash_success'] = 'Kategoria u perditesua me sukses!';
                 redirect('../categories.php');
-
             } catch (mysqli_sql_exception $e) {
                 error_log("Edit category error: " . $e->getMessage());
                 $errors[] = 'Diqka shkoi gabim. Provo perseri.';
@@ -105,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="sq">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -114,48 +114,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/style.css">
 </head>
+
 <body>
-<?php require_once __DIR__ . '/../includes/navbar.php'; ?>
+    <?php require_once __DIR__ . '/../includes/navbar.php'; ?>
 
-<main class="page-center">
-    <div class="page-header">
-        <p class="eyebrow">Ndryshime</p>
-        <h1>Edito kategorine</h1>
-    </div>
-
-    <?php if (!empty($errors)): ?>
-        <div class="alert error">
-            <?php foreach ($errors as $err): ?>
-                <p><?= e($err) ?></p>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-
-    <form method="POST" class="task-form">
-        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-        <input type="hidden" name="id"   value="<?= (int)$cat_id ?>">
-
-        <label>Emri *</label>
-        <input type="text" name="name" maxlength="50"
-               value="<?= e($old['name']) ?>" required autofocus>
-
-        <label>Ngjyra</label>
-        <div class="color-picker">
-            <?php foreach ($colors as $c): ?>
-                <label class="color-opt" style="--c: <?= e($c) ?>;">
-                    <input type="radio" name="color" value="<?= e($c) ?>" <?= $old['color'] === $c ? 'checked' : '' ?>>
-                    <span></span>
-                </label>
-            <?php endforeach; ?>
+    <main class="page-center">
+        <div class="page-header">
+            <p class="eyebrow">Ndryshime</p>
+            <h1>Edito kategorine</h1>
         </div>
 
-        <div class="form-actions">
-            <a href="../categories.php" class="btn-outline">Anulo</a>
-            <button type="submit" class="btn">Ruaj ndryshimet</button>
-        </div>
-    </form>
-</main>
+        <?php if (!empty($errors)): ?>
+            <div class="alert error">
+                <?php foreach ($errors as $err): ?>
+                    <p><?= e($err) ?></p>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+        <form method="POST" class="task-form">
+            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+            <input type="hidden" name="id" value="<?= (int)$cat_id ?>">
+
+            <label>Emri *</label>
+            <input type="text" name="name" maxlength="50"
+                value="<?= e($old['name']) ?>" required autofocus>
+
+            <label>Ngjyra</label>
+            <div class="color-picker">
+                <?php foreach ($colors as $c): ?>
+                    <label class="color-opt" style="--c: <?= e($c) ?>;">
+                        <input type="radio" name="color" value="<?= e($c) ?>" <?= $old['color'] === $c ? 'checked' : '' ?>>
+                        <span></span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="form-actions">
+                <a href="../categories.php" class="btn-outline">Anulo</a>
+                <button type="submit" class="btn">Ruaj ndryshimet</button>
+            </div>
+        </form>
+    </main>
+
+    <?php require_once __DIR__ . '/../includes/footer.php'; ?>
 </body>
+
 </html>

@@ -15,12 +15,14 @@ while (ob_get_level() > 0) {
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
-function pk_out(array $data, int $code = 200) {
+function pk_out(array $data, int $code = 200)
+{
     http_response_code($code);
     echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     exit;
 }
-function pk_fail(string $msg, int $code = 400) {
+function pk_fail(string $msg, int $code = 400)
+{
     pk_out(['ok' => false, 'error' => $msg], $code);
 }
 
@@ -83,8 +85,14 @@ if (in_array($action, ['register_options', 'register_verify'], true)) {
 
             $wa   = passkey_webauthn();
             $args = $wa->getCreateArgs(
-                passkey_user_handle($uid), $user['email'], $user['username'],
-                60, 'required', 'required', null, $exclude
+                passkey_user_handle($uid),
+                $user['email'],
+                $user['username'],
+                60,
+                'required',
+                'required',
+                null,
+                $exclude
             );
             $_SESSION['pk_reg'] = [
                 'challenge' => $wa->getChallenge()->getBinaryString(),

@@ -1,4 +1,5 @@
-<?php // includes/auth-side.php - paneli i majte per login.php dhe signup.php ?>
+<?php // includes/auth-side.php - paneli i majte per login.php dhe signup.php 
+?>
 <aside class="auth-side">
     <div class="hero-badge">TaskStack</div>
 

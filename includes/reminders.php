@@ -9,13 +9,16 @@ const REMINDER_OVERDUE_DAYS = 7;   // detyrat e vonuara perfshihen vetem per ket
 const REMINDER_MAX_ITEMS    = 15;  // max detyra te listuara per seksion ne email
 const REMINDER_MAX_EMAILS   = 100; // max email per ekzekutim (mbrojtje nga limiti i SMTP)
 
-function reminder_strings(string $lang): array {
+function reminder_strings(string $lang): array
+{
     $d = [
         'sq' => [
             'subject' => 'TaskStack: detyra që kërkojnë vëmendje',
             'heading' => 'Detyrat e tua kanë afate',
             'intro'   => 'Përshëndetje {name}, ja çfarë ka afat së shpejti:',
-            'overdue' => 'Të vonuara', 'today' => 'Afati është sot', 'tomorrow' => 'Afati është nesër',
+            'overdue' => 'Të vonuara',
+            'today' => 'Afati është sot',
+            'tomorrow' => 'Afati është nesër',
             'more'    => '… dhe {n} të tjera',
             'btn'     => 'Hap Dashboard-in',
             'note'    => 'Këtë email e merr sepse kujtesat janë aktive. Mund t’i çaktivizosh te Settings.',
@@ -24,7 +27,9 @@ function reminder_strings(string $lang): array {
             'subject' => 'TaskStack: tasks that need attention',
             'heading' => 'Your tasks have deadlines',
             'intro'   => 'Hi {name}, here is what is due soon:',
-            'overdue' => 'Overdue', 'today' => 'Due today', 'tomorrow' => 'Due tomorrow',
+            'overdue' => 'Overdue',
+            'today' => 'Due today',
+            'tomorrow' => 'Due tomorrow',
             'more'    => '… and {n} more',
             'btn'     => 'Open Dashboard',
             'note'    => 'You receive this email because reminders are turned on. You can turn them off in Settings.',
@@ -34,7 +39,8 @@ function reminder_strings(string $lang): array {
 }
 
 // Kthen [user_id => ['user' => [...], 'overdue' => [...], 'today' => [...], 'tomorrow' => [...]]]
-function reminders_collect(mysqli $conn, DateTimeImmutable $now): array {
+function reminders_collect(mysqli $conn, DateTimeImmutable $now): array
+{
     $today    = $now->format('Y-m-d');
     $tomorrow = $now->modify('+1 day')->format('Y-m-d');
     $oldest   = $now->modify('-' . (int)REMINDER_OVERDUE_DAYS . ' days')->format('Y-m-d');
@@ -61,7 +67,9 @@ function reminders_collect(mysqli $conn, DateTimeImmutable $now): array {
         if (!isset($out[$uid])) {
             $out[$uid] = [
                 'user' => ['id' => $uid, 'username' => $r['username'], 'email' => $r['email'], 'language' => $r['language']],
-                'overdue' => [], 'today' => [], 'tomorrow' => [],
+                'overdue' => [],
+                'today' => [],
+                'tomorrow' => [],
             ];
         }
         $bucket = $r['due_date'] < $today ? 'overdue' : ($r['due_date'] === $today ? 'today' : 'tomorrow');
@@ -72,18 +80,19 @@ function reminders_collect(mysqli $conn, DateTimeImmutable $now): array {
 }
 
 // Ndertimi i emailit (HTML + tekst). Gjithe teksti i userit kalon nga e().
-function reminder_build(array $entry): array {
+function reminder_build(array $entry): array
+{
     $lang = ($entry['user']['language'] ?? 'sq') === 'en' ? 'en' : 'sq';
     $s    = reminder_strings($lang);
     $link = app_url() . '/dashboard.php';
     $name = (string)$entry['user']['username'];
 
     $html = '<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">'
-          . '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px;"><tr><td align="center">'
-          . '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:14px;padding:32px;">'
-          . '<tr><td style="font-size:22px;font-weight:700;color:#111827;">TaskStack</td></tr>'
-          . '<tr><td style="font-size:18px;font-weight:700;color:#111827;padding:18px 0 8px;">' . e($s['heading']) . '</td></tr>'
-          . '<tr><td style="font-size:15px;line-height:1.6;color:#374151;padding-bottom:12px;">' . e(str_replace('{name}', $name, $s['intro'])) . '</td></tr>';
+        . '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px;"><tr><td align="center">'
+        . '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:14px;padding:32px;">'
+        . '<tr><td style="font-size:22px;font-weight:700;color:#111827;">TaskStack</td></tr>'
+        . '<tr><td style="font-size:18px;font-weight:700;color:#111827;padding:18px 0 8px;">' . e($s['heading']) . '</td></tr>'
+        . '<tr><td style="font-size:15px;line-height:1.6;color:#374151;padding-bottom:12px;">' . e(str_replace('{name}', $name, $s['intro'])) . '</td></tr>';
     $text = str_replace('{name}', $name, $s['intro']) . "\n";
 
     $colors = ['overdue' => '#dc2626', 'today' => '#d97706', 'tomorrow' => '#2563eb'];
@@ -105,15 +114,16 @@ function reminder_build(array $entry): array {
     }
 
     $html .= '<tr><td style="padding:22px 0;"><a href="' . e($link) . '" style="display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 24px;border-radius:10px;">' . e($s['btn']) . '</a></td></tr>'
-          . '<tr><td style="font-size:12px;line-height:1.6;color:#6b7280;">' . e($s['note']) . ' ' . e(app_url() . '/settings.php#reminders') . '</td></tr>'
-          . '</table></td></tr></table></body></html>';
+        . '<tr><td style="font-size:12px;line-height:1.6;color:#6b7280;">' . e($s['note']) . ' ' . e(app_url() . '/settings.php#reminders') . '</td></tr>'
+        . '</table></td></tr></table></body></html>';
     $text .= "\n" . $link . "\n\n" . $s['note'] . ' ' . app_url() . "/settings.php#reminders\n";
 
     return [$s['subject'], $html, $text];
 }
 
 // Ekzekuton nje rrotullim. Kthen ['users' => n, 'sent' => n, 'failed' => n] ose null nese po punon nje instance tjeter.
-function reminders_run(mysqli $conn, ?DateTimeImmutable $now = null): ?array {
+function reminders_run(mysqli $conn, ?DateTimeImmutable $now = null): ?array
+{
     $now = $now ?? new DateTimeImmutable('now');
     $lock = $conn->query("SELECT GET_LOCK('taskstack_reminders', 0) AS l")->fetch_assoc();
     if ((int)($lock['l'] ?? 0) !== 1) {

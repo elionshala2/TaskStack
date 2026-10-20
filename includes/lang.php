@@ -10,7 +10,7 @@ return [
     'nav.logout'     => ['sq' => 'Logout', 'en' => 'Logout'],
     'nav.login'      => ['sq' => 'Login', 'en' => 'Login'],
     'nav.signup'     => ['sq' => 'Sign Up', 'en' => 'Sign Up'],
-    'nav.theme_light'=> ['sq' => 'Kalo në modalitet të çelët', 'en' => 'Switch to light mode'],
+    'nav.theme_light' => ['sq' => 'Kalo në modalitet të çelët', 'en' => 'Switch to light mode'],
     'nav.theme_dark' => ['sq' => 'Kalo në modalitet të errët', 'en' => 'Switch to dark mode'],
     'nav.lang'       => ['sq' => 'Ndrysho gjuhën', 'en' => 'Change language'],
 
@@ -24,8 +24,10 @@ return [
     'footer.rights'  => ['sq' => 'Të gjitha të drejtat e rezervuara.', 'en' => 'All rights reserved.'],
 
     // cookie notice
-    'cookie.text'    => ['sq' => 'Përdorim cookie të nevojshme (sesioni, siguria) dhe cookie preferencash (tema dhe gjuha) për ta bërë faqen të funksionojë siç duhet. Nuk përdorim cookie reklamimi apo gjurmimi.',
-                         'en' => 'We use essential cookies (session, security) and preference cookies (theme and language) to make the site work properly. We do not use advertising or tracking cookies.'],
+    'cookie.text'    => [
+        'sq' => 'Përdorim cookie të nevojshme (sesioni, siguria) dhe cookie preferencash (tema dhe gjuha) për ta bërë faqen të funksionojë siç duhet. Nuk përdorim cookie reklamimi apo gjurmimi.',
+        'en' => 'We use essential cookies (session, security) and preference cookies (theme and language) to make the site work properly. We do not use advertising or tracking cookies.'
+    ],
     'cookie.more'    => ['sq' => 'Më shumë', 'en' => 'Learn more'],
     'cookie.accept'  => ['sq' => 'Pranoj', 'en' => 'Accept'],
 

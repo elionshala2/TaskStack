@@ -5,7 +5,7 @@ require_once __DIR__ . '/../config.php'; // lidhja me databazen
 require_once __DIR__ . '/../includes/functions.php'; // funksionet e pergjithshme
 
 session_start(); // fillohet sessioni per te ruajtur user_id dhe tokenin CSRF
-require_login();// kontrollon nese useri eshte i kyqur, nese jo e kthen ne login.php
+require_login(); // kontrollon nese useri eshte i kyqur, nese jo e kthen ne login.php
 
 $user_id = $_SESSION['user_id']; // merr user_id nga sessioni
 
@@ -38,7 +38,6 @@ try {
         $_SESSION['flash_success'] = 'Detyra u fshi me sukses!'; // nese tasku u fshi me sukses e ruan nje mesazh ne session
     }
     $stmt->close();
-
 } catch (mysqli_sql_exception $e) {
     error_log("Delete task error: " . $e->getMessage());
     $_SESSION['flash_error'] = 'Diqka shkoi gabim. Provo perseri.';

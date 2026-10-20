@@ -77,6 +77,7 @@ $logged_in = !empty($_SESSION['user_id']);
 ?>
 <!DOCTYPE html>
 <html lang="sq">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -86,50 +87,60 @@ $logged_in = !empty($_SESSION['user_id']);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/style.css">
 </head>
+
 <body>
-<?php require_once __DIR__ . '/includes/navbar.php'; ?>
+    <?php require_once __DIR__ . '/includes/navbar.php'; ?>
 
-<div class="auth-layout">
+    <div class="auth-layout">
 
-    <?php require_once __DIR__ . '/includes/auth-side.php'; ?>
+        <?php require_once __DIR__ . '/includes/auth-side.php'; ?>
 
-    <div class="auth-box">
-        <h1>Konfirmo emailin</h1>
+        <div class="auth-box">
+            <h1>Konfirmo emailin</h1>
 
-        <?php if ($state === 'form'): ?>
-            <p class="auth-sub">Konfirmo që emaili i llogarise në platformën TaskStack të bëhet <strong><?= e($row['payload']) ?></strong>.</p>
+            <?php if ($state === 'form'): ?>
+                <p class="auth-sub">Konfirmo që emaili i llogarise në platformën TaskStack të bëhet <strong><?= e($row['payload']) ?></strong>.</p>
 
-            <?php if (!empty($errors)): ?>
-                <div class="alert error">
-                    <?php foreach ($errors as $err): ?><p><?= e($err) ?></p><?php endforeach; ?>
+                <?php if (!empty($errors)): ?>
+                    <div class="alert error">
+                        <?php foreach ($errors as $err): ?><p><?= e($err) ?></p><?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <form method="POST" novalidate>
+                    <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="token" value="<?= e($token) ?>">
+                    <button type="submit">Po, ndrysho emailin</button>
+                </form>
+
+            <?php elseif ($state === 'done'): ?>
+                <div class="alert success">
+                    <p>Emaili u ndryshua me sukses! Përdore atë për t'u kyqur nga tani.</p>
                 </div>
+                <p><a href="<?= $logged_in ? 'settings.php' : 'login.php' ?>"><?= $logged_in ? 'Shko te Settings' : 'Shko te Login' ?> &rarr;</a></p>
+
+            <?php elseif ($state === 'taken'): ?>
+                <div class="alert error">
+                    <p>Ky email është i përdorur nga një llogari tjeter, ndaj nuk mund të ndryshohet.</p>
+                </div>
+                <p><a href="settings.php">&larr; Kthehu te Settings</a></p>
+
+            <?php elseif ($state === 'error'): ?>
+                <div class="alert error">
+                    <p>Diqka shkoi gabim. Provo përsëri me vone.</p>
+                </div>
+
+            <?php else: ?>
+                <div class="alert error">
+                    <p>Ky link është i pavlefshem, ka skaduar ose është perdorur tashme.</p>
+                </div>
+                <p><a href="settings.php">&larr; Kthehu te Settings</a></p>
             <?php endif; ?>
+        </div>
 
-            <form method="POST" novalidate>
-                <input type="hidden" name="csrf"  value="<?= e(csrf_token()) ?>">
-                <input type="hidden" name="token" value="<?= e($token) ?>">
-                <button type="submit">Po, ndrysho emailin</button>
-            </form>
-
-        <?php elseif ($state === 'done'): ?>
-            <div class="alert success"><p>Emaili u ndryshua me sukses! Përdore atë për t'u kyqur nga tani.</p></div>
-            <p><a href="<?= $logged_in ? 'settings.php' : 'login.php' ?>"><?= $logged_in ? 'Shko te Settings' : 'Shko te Login' ?> &rarr;</a></p>
-
-        <?php elseif ($state === 'taken'): ?>
-            <div class="alert error"><p>Ky email është i përdorur nga një llogari tjeter, ndaj nuk mund të ndryshohet.</p></div>
-            <p><a href="settings.php">&larr; Kthehu te Settings</a></p>
-
-        <?php elseif ($state === 'error'): ?>
-            <div class="alert error"><p>Diqka shkoi gabim. Provo përsëri me vone.</p></div>
-
-        <?php else: ?>
-            <div class="alert error"><p>Ky link është i pavlefshem, ka skaduar ose është perdorur tashme.</p></div>
-            <p><a href="settings.php">&larr; Kthehu te Settings</a></p>
-        <?php endif; ?>
     </div>
 
-</div>
-
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
+    <?php require_once __DIR__ . '/includes/footer.php'; ?>
 </body>
+
 </html>

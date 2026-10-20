@@ -36,7 +36,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF kundrej sulmeve
     if (!verify_csrf($_POST['csrf'] ?? '')) {
         $errors[] = t('login.invalid_req');
-
     } else {
         $email     = trim($_POST['email'] ?? '');
         $password  = $_POST['password'] ?? '';
@@ -44,20 +43,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $akey      = account_key($email); // limit edhe per llogari (jo vetem per IP), kunder sulmeve nga shume IP
 
         // Rate limiting: max 5 tentativa per IP dhe max 10 per llogari
-        if (login_attempts_count($conn, $ip) >= MAX_LOGIN_ATTEMPTS
-            || login_attempts_count($conn, $akey) >= MAX_ACCOUNT_ATTEMPTS) {
+        if (
+            login_attempts_count($conn, $ip) >= MAX_LOGIN_ATTEMPTS
+            || login_attempts_count($conn, $akey) >= MAX_ACCOUNT_ATTEMPTS
+        ) {
             $errors[] = 'Shume tentativa te pasuksesshme. Provo perseri pas ' . LOGIN_WINDOW_MINUTES . ' minutash.'; // mesazh i pergjithshem
 
-        // Kontrollon nese eshte thate
+            // Kontrollon nese eshte thate
         } elseif ($email === '' || $password === '') {
             $errors[] = 'Ploteso te gjitha fushat.';
-
         } elseif (strlen($password) > 1024) {
             // password absurdisht i gjate: nuk kalon ne bcrypt
             record_login_attempt($conn, $ip);
             record_login_attempt($conn, $akey);
             $errors[] = 'Kredencialet e pavlefshme.';
-
         } else {
             try {
                 // Kerko user-in ne databaze
@@ -78,7 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($passwordOk && !(int)$user['email_verified'] && empty($user['google_id'])) {
                     $needs_verify = true;
                     $errors[] = 'Emaili yt nuk eshte verifikuar ende. Kontrollo inbox-in (edhe spam) per linkun e verifikimit.';
-
                 } elseif ($passwordOk) {
 
                     // Pastro tentativat e kesaj llogarie (tentativat e IP skadojne vete, qe mos te rivendosen me nje login te suksesshem)
@@ -107,7 +105,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Shko ne dashboard
                         redirect('index.php');
                     }
-
                 } else {
                     // Numro tentativen e gabuar (per IP dhe per llogari)
                     record_login_attempt($conn, $ip);
@@ -116,7 +113,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Mesazh i pergjithshem (nuk tregon a ekziston emaili)
                     $errors[] = 'Kredencialet e pavlefshme.';
                 }
-
             } catch (mysqli_sql_exception $e) {
                 error_log("Login error: " . $e->getMessage());
                 $errors[] = 'Diqka shkoi gabim. Provo perseri.';
@@ -127,6 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="sq">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -136,84 +133,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/style.css">
 </head>
+
 <body>
-<?php require_once __DIR__ . '/includes/navbar.php'; ?>
+    <?php require_once __DIR__ . '/includes/navbar.php'; ?>
 
-<div class="auth-layout">
+    <div class="auth-layout">
 
-    <?php require_once __DIR__ . '/includes/auth-side.php'; // paneli i majte me preview ?>
+        <?php require_once __DIR__ . '/includes/auth-side.php'; // paneli i majte me preview 
+        ?>
 
-    <div class="auth-box">
-        <h1>Login</h1>
-        <p class="auth-sub"><?= e(t('login.sub')) ?></p>
+        <div class="auth-box">
+            <h1>Login</h1>
+            <p class="auth-sub"><?= e(t('login.sub')) ?></p>
 
-        <?php if ($success): ?>
-            <div class="alert success"><p><?= e($success) ?></p></div>
-        <?php endif; ?>
+            <?php if ($success): ?>
+                <div class="alert success">
+                    <p><?= e($success) ?></p>
+                </div>
+            <?php endif; ?>
 
-        <?php if (!empty($errors)): ?>
-            <div class="alert error">
-                <?php foreach ($errors as $err): ?>
-                    <p><?= e($err) ?></p>
-                <?php endforeach; ?>
+            <?php if (!empty($errors)): ?>
+                <div class="alert error">
+                    <?php foreach ($errors as $err): ?>
+                        <p><?= e($err) ?></p>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST" novalidate>
+                <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+
+                <label>Email</label>
+                <input type="email" name="email"
+                    value="<?= e($old_email) ?>"
+                    placeholder="name@example.com"
+                    autocomplete="email" required>
+
+                <label><?= e(t('login.password')) ?></label>
+                <input type="password" name="password"
+                    placeholder="••••••••"
+                    autocomplete="current-password" required>
+
+                <button type="submit">Login</button>
+            </form>
+
+            <?php if ($needs_verify): ?>
+                <p><a href="resend_verification.php"><?= e(t('login.resend')) ?></a></p>
+            <?php endif; ?>
+            <p><a href="forgot_password.php"><?= e(t('login.forgot')) ?></a></p>
+
+            <div class="auth-divider"><span><?= e(t('login.or')) ?></span></div>
+
+            <!-- Login me Google -->
+            <a href="google-callback.php" class="btn-google">
+                <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                </svg>
+                <?= e(t('login.google')) ?>
+            </a>
+
+            <!-- Login me passkey (shfaqet vetem nese shfletuesi e mbeshtet; shiko assets/passkey.js) -->
+            <div class="passkey-box" id="passkeyLogin" hidden
+                data-endpoint="passkey_api.php" data-csrf="<?= e(csrf_token()) ?>"
+                data-msg-cancel="<?= e(t('pk.cancelled')) ?>" data-msg-fail="<?= e(t('pk.login_failed')) ?>">
+                <button type="button" class="btn-google" id="passkeyLoginBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="8" cy="15" r="4" />
+                        <path d="M10.85 12.15 19 4" />
+                        <path d="m18 5 3 3" />
+                        <path d="m15 8 3 3" />
+                    </svg>
+                    <?= e(t('pk.login_btn')) ?>
+                </button>
+                <p class="passkey-msg alert error" role="alert" hidden></p>
             </div>
-        <?php endif; ?>
 
-        <form method="POST" novalidate>
-            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+            <p class="auth-legal">Duke vazhduar, pranon <a href="terms.php">Kushtet e Shërbimit</a> dhe <a href="privacy.php">Politikën e Privatësisë</a>.</p>
 
-            <label>Email</label>
-            <input type="email" name="email"
-                   value="<?= e($old_email) ?>"
-                   placeholder="name@example.com"
-                   autocomplete="email" required>
-
-            <label><?= e(t('login.password')) ?></label>
-            <input type="password" name="password"
-                   placeholder="••••••••"
-                   autocomplete="current-password" required>
-
-            <button type="submit">Login</button>
-        </form>
-
-        <?php if ($needs_verify): ?>
-            <p><a href="resend_verification.php"><?= e(t('login.resend')) ?></a></p>
-        <?php endif; ?>
-        <p><a href="forgot_password.php"><?= e(t('login.forgot')) ?></a></p>
-
-        <div class="auth-divider"><span><?= e(t('login.or')) ?></span></div>
-
-        <!-- Login me Google -->
-        <a href="google-callback.php" class="btn-google">
-            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-            </svg>
-            <?= e(t('login.google')) ?>
-        </a>
-
-        <!-- Login me passkey (shfaqet vetem nese shfletuesi e mbeshtet; shiko assets/passkey.js) -->
-        <div class="passkey-box" id="passkeyLogin" hidden
-             data-endpoint="passkey_api.php" data-csrf="<?= e(csrf_token()) ?>"
-             data-msg-cancel="<?= e(t('pk.cancelled')) ?>" data-msg-fail="<?= e(t('pk.login_failed')) ?>">
-            <button type="button" class="btn-google" id="passkeyLoginBtn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M10.85 12.15 19 4"/><path d="m18 5 3 3"/><path d="m15 8 3 3"/></svg>
-                <?= e(t('pk.login_btn')) ?>
-            </button>
-            <p class="passkey-msg alert error" role="alert" hidden></p>
+            <p><?= e(t('login.nouser')) ?> <a href="signup.php"><?= e(t('login.register')) ?></a></p>
+            <p><a href="index.php"><?= e(t('login.back')) ?></a></p>
         </div>
 
-        <p class="auth-legal">Duke vazhduar, pranon <a href="terms.php">Kushtet e Shërbimit</a> dhe <a href="privacy.php">Politikën e Privatësisë</a>.</p>
+    </div><!-- /auth-layout -->
 
-        <p><?= e(t('login.nouser')) ?> <a href="signup.php"><?= e(t('login.register')) ?></a></p>
-        <p><a href="index.php"><?= e(t('login.back')) ?></a></p>
-    </div>
-
-</div><!-- /auth-layout -->
-
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
-<script src="assets/passkey.js"></script>
+    <?php require_once __DIR__ . '/includes/footer.php'; ?>
+    <script src="assets/passkey.js"></script>
 </body>
+
 </html>

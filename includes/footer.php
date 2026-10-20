@@ -53,14 +53,14 @@ $f_loggedIn = !empty($_SESSION['user_id']);
     </div>
 </footer>
 <?php if (empty($_COOKIE['ts_cookie_ok'])): ?>
-<div class="cookie-banner" role="dialog" aria-live="polite" aria-label="Cookies">
-    <p><?= e(t('cookie.text')) ?> <a href="<?= $f_prefix ?>privacy.php"><?= e(t('cookie.more')) ?></a></p>
-    <form method="POST" action="<?= $f_prefix ?>set_pref.php">
-        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-        <input type="hidden" name="type" value="cookie_consent">
-        <input type="hidden" name="next" value="<?= e($_SERVER['REQUEST_URI'] ?? '/') ?>">
-        <button type="submit" class="btn"><?= e(t('cookie.accept')) ?></button>
-    </form>
-</div>
+    <div class="cookie-banner" role="dialog" aria-live="polite" aria-label="Cookies">
+        <p><?= e(t('cookie.text')) ?> <a href="<?= $f_prefix ?>privacy.php"><?= e(t('cookie.more')) ?></a></p>
+        <form method="POST" action="<?= $f_prefix ?>set_pref.php">
+            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+            <input type="hidden" name="type" value="cookie_consent">
+            <input type="hidden" name="next" value="<?= e($_SERVER['REQUEST_URI'] ?? '/') ?>">
+            <button type="submit" class="btn"><?= e(t('cookie.accept')) ?></button>
+        </form>
+    </div>
 <?php endif; ?>
 <script src="<?= $f_prefix ?>assets/script.js"></script>
