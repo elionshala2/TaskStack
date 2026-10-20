@@ -16,7 +16,14 @@ $en = function_exists('pref_lang') && pref_lang() === 'en';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $en ? 'Terms of Service' : 'Kushtet e Sherbimit' ?> - <?= e($legal_site) ?></title>
+    <?php
+    require_once __DIR__ . '/includes/seo.php';
+    seo_head([
+        'title' => ($en ? 'Terms of Service' : 'Kushtet e Sherbimit') . ' - ' . $legal_site,
+        'desc'  => $en ? 'TaskStack terms of service: the rules for using the free task manager and reminders service.' : 'Kushtet e shërbimit të TaskStack: rregullat për përdorimin e menaxherit falas të detyrave dhe përkujtimeve.',
+        'path'  => 'terms.php',
+    ]);
+    ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">

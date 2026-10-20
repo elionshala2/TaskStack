@@ -1,21 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://taskstack.wuaze.com/</loc>
+    <loc>https://taskstack.wuaze.com/</loc>
     <lastmod>2026-10-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://taskstack.wuaze.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taskstack.wuaze.com/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taskstack.wuaze.com/"/>
   </url>
   <url>
-    <loc>http://taskstack.wuaze.com/login.php</loc>
+    <loc>https://taskstack.wuaze.com/?lang=en</loc>
     <lastmod>2026-10-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://taskstack.wuaze.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taskstack.wuaze.com/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taskstack.wuaze.com/"/>
   </url>
   <url>
-    <loc>http://taskstack.wuaze.com/signup.php</loc>
+    <loc>https://taskstack.wuaze.com/features.php</loc>
     <lastmod>2026-10-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://taskstack.wuaze.com/features.php"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taskstack.wuaze.com/features.php?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taskstack.wuaze.com/features.php"/>
+  </url>
+  <url>
+    <loc>https://taskstack.wuaze.com/features.php?lang=en</loc>
+    <lastmod>2026-10-20</lastmod>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://taskstack.wuaze.com/features.php"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taskstack.wuaze.com/features.php?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taskstack.wuaze.com/features.php"/>
+  </url>
+  <url>
+    <loc>https://taskstack.wuaze.com/signup.php</loc>
+    <lastmod>2026-10-20</lastmod>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://taskstack.wuaze.com/signup.php"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taskstack.wuaze.com/signup.php?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taskstack.wuaze.com/signup.php"/>
+  </url>
+  <url>
+    <loc>https://taskstack.wuaze.com/signup.php?lang=en</loc>
+    <lastmod>2026-10-20</lastmod>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://taskstack.wuaze.com/signup.php"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taskstack.wuaze.com/signup.php?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taskstack.wuaze.com/signup.php"/>
+  </url>
+  <url>
+    <loc>https://taskstack.wuaze.com/privacy.php</loc>
+    <lastmod>2026-10-20</lastmod>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://taskstack.wuaze.com/privacy.php"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taskstack.wuaze.com/privacy.php?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taskstack.wuaze.com/privacy.php"/>
+  </url>
+  <url>
+    <loc>https://taskstack.wuaze.com/privacy.php?lang=en</loc>
+    <lastmod>2026-10-20</lastmod>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://taskstack.wuaze.com/privacy.php"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taskstack.wuaze.com/privacy.php?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taskstack.wuaze.com/privacy.php"/>
+  </url>
+  <url>
+    <loc>https://taskstack.wuaze.com/terms.php</loc>
+    <lastmod>2026-10-20</lastmod>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://taskstack.wuaze.com/terms.php"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taskstack.wuaze.com/terms.php?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taskstack.wuaze.com/terms.php"/>
+  </url>
+  <url>
+    <loc>https://taskstack.wuaze.com/terms.php?lang=en</loc>
+    <lastmod>2026-10-20</lastmod>
+    <xhtml:link rel="alternate" hreflang="sq" href="https://taskstack.wuaze.com/terms.php"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taskstack.wuaze.com/terms.php?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taskstack.wuaze.com/terms.php"/>
   </url>
 </urlset>

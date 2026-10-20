@@ -13,12 +13,15 @@ return [
     'nav.theme_light' => ['sq' => 'Kalo në modalitet të çelët', 'en' => 'Switch to light mode'],
     'nav.theme_dark' => ['sq' => 'Kalo në modalitet të errët', 'en' => 'Switch to dark mode'],
     'nav.lang'       => ['sq' => 'Ndrysho gjuhën', 'en' => 'Change language'],
+    'nav.features'   => ['sq' => 'Veçoritë', 'en' => 'Features'],
 
     // footer
     'footer.tagline' => ['sq' => 'Krijo hapësirë për atë që ka rëndësi', 'en' => 'Make room for what matters'],
     'footer.product' => ['sq' => 'Produkti', 'en' => 'Product'],
     'footer.account' => ['sq' => 'Llogaria', 'en' => 'Account'],
     'footer.legal'   => ['sq' => 'Ligjore', 'en' => 'Legal'],
+    'footer.features' => ['sq' => 'Veçoritë', 'en' => 'Features'],
+    'footer.language' => ['sq' => 'Gjuha', 'en' => 'Language'],
     'footer.privacy' => ['sq' => 'Privacy Policy', 'en' => 'Privacy Policy'],
     'footer.terms'   => ['sq' => 'Terms of Service', 'en' => 'Terms of Service'],
     'footer.rights'  => ['sq' => 'Të gjitha të drejtat e rezervuara.', 'en' => 'All rights reserved.'],
@@ -114,12 +117,12 @@ return [
     'dash.alert_today'   => ['sq' => 'me afat sot', 'en' => 'due today'],
     'dash.alert_view'    => ['sq' => 'Shiko të vonuarat →', 'en' => 'View overdue →'],
 
-    // ---- kujtesat ----
-    'rem.title' => ['sq' => 'Kujtesat e afateve', 'en' => 'Deadline reminders'],
+    // ---- përkujtimet ----
+    'rem.title' => ['sq' => 'Përkujtimet e afateve', 'en' => 'Deadline reminders'],
     'rem.desc'  => ['sq' => 'Një email në ditë (në mëngjes) me detyrat e vonuara, ato me afat sot dhe nesër. Nuk dërgohet asgjë kur s’ke afate.', 'en' => 'One email a day (in the morning) listing overdue tasks and tasks due today or tomorrow. Nothing is sent when you have no deadlines.'],
-    'rem.label' => ['sq' => 'Më dërgo kujtesa me email', 'en' => 'Email me deadline reminders'],
+    'rem.label' => ['sq' => 'Më dërgo përkujtime me email', 'en' => 'Email me deadline reminders'],
     'rem.save'  => ['sq' => 'Ruaj', 'en' => 'Save'],
-    'rem.saved' => ['sq' => 'Cilësimi i kujtesave u ruajt.', 'en' => 'Reminder setting saved.'],
+    'rem.saved' => ['sq' => 'Cilësimi i përkujtimeve u ruajt.', 'en' => 'Reminder setting saved.'],
 
     // ---- passkeys ----
     'pk.login_btn'    => ['sq' => 'Hyr me passkey', 'en' => 'Sign in with a passkey'],

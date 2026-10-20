@@ -12,6 +12,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $next = safe_next($_POST['next'] ?? '/');
+// URL-ja ?lang=en ka përparësi mbi cookie; e heqim qe butoni AL/EN te funksionoje
+$next = preg_replace('/([?&])lang=[^&#]*&?/', '$1', $next) ?? $next;
+$next = rtrim($next, '?&');
+if ($next === '') {
+    $next = '/';
+}
 
 if (verify_csrf($_POST['csrf'] ?? '')) {
     $type = $_POST['type'] ?? '';
@@ -25,7 +31,7 @@ if (verify_csrf($_POST['csrf'] ?? '')) {
         $value = $_POST['value'] ?? '';
         if (in_array($value, PREF_LANGS, true)) {
             set_pref_cookie('ts_lang', $value);
-            if (!empty($_SESSION['user_id'])) { // per emailet e kujtesave
+            if (!empty($_SESSION['user_id'])) { // per emailet e përkujtimeve
                 try {
                     $stmt = $conn->prepare("UPDATE regjistrimi SET language = ? WHERE id = ?");
                     $uid  = (int)$_SESSION['user_id'];

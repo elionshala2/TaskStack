@@ -3299,7 +3299,7 @@ html:not([data-theme="light"]) .ts-deco::after { transform: translateX(18px); op
 .task-meta .tomorrow  { color: var(--accent); font-weight: 600; }
 
 /* =====================================================================
-   Passkeys + kujtesat (Settings, Login)
+   Passkeys + përkujtimet (Settings, Login)
    ===================================================================== */
 [hidden] { display: none !important; }
 .passkey-box { margin-top: 10px; }
@@ -3412,4 +3412,22 @@ html:not([data-theme="light"]) .ts-deco::after { transform: translateX(18px); op
     .auth-box.otp-box { margin-top: 32px; }
     .auth-box .otp-input { font-size: 26px; letter-spacing: 0.35em; padding-left: calc(14px + 0.35em); }
     .otp-actions { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
+   SEO additions: h2 in feature cards (features.php) + links in sections
+   ========================================================= */
+.feature-card h2 {
+    margin-bottom: 8px;
+    font-size: 20px;
+    color: var(--text);
+}
+
+.feature-card .check-list { margin-top: 14px; }
+
+.section-sub a,
+.cta-section p a {
+    color: var(--accent-2);
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }

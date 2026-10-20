@@ -1,10 +1,60 @@
+# robots.txt - TaskStack
+# Faqet publike (kryesore, veçoritë, signup, privacy, terms) jane te hapura per te gjithe motorret e kerkimit dhe AI.
+# Faqet private (dashboard, settings, tasks, API) jane te bllokuara. Login mbetet i crawl-ueshem por ka noindex.
+
 User-agent: *
 Allow: /
 Disallow: /dashboard.php
+Disallow: /categories.php
 Disallow: /settings.php
-Disallow: /task-form.php
-Disallow: /login.php
-Disallow: /signup.php
+Disallow: /tasks/
 Disallow: /two_factor.php
+Disallow: /passkey_api.php
+Disallow: /google-callback.php
+Disallow: /set_pref.php
+Disallow: /logout.php
+Disallow: /verify.php
+Disallow: /resend_verification.php
+Disallow: /confirm_email.php
+Disallow: /reset_password.php
+Disallow: /revert.php
+Disallow: /cron/
+Disallow: /includes/
 
-Sitemap: http://taskstack.wuaze.com/sitemap.xml
+# Motorre kerkimi dhe asistente AI (lejohen shprehimisht)
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: Bingbot
+User-agent: Googlebot
+User-agent: DuckDuckBot
+User-agent: CCBot
+User-agent: cohere-ai
+User-agent: Meta-ExternalAgent
+User-agent: Amazonbot
+Allow: /
+Disallow: /dashboard.php
+Disallow: /categories.php
+Disallow: /settings.php
+Disallow: /tasks/
+Disallow: /two_factor.php
+Disallow: /passkey_api.php
+Disallow: /google-callback.php
+Disallow: /set_pref.php
+Disallow: /logout.php
+Disallow: /verify.php
+Disallow: /resend_verification.php
+Disallow: /confirm_email.php
+Disallow: /reset_password.php
+Disallow: /revert.php
+Disallow: /cron/
+Disallow: /includes/
+
+Sitemap: https://taskstack.wuaze.com/sitemap.xml

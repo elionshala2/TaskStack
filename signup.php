@@ -126,7 +126,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - TaskStack</title>
+    <?php
+    require_once __DIR__ . '/includes/seo.php';
+    $seo_en = pref_lang() === 'en';
+    seo_head([
+        'title' => $seo_en ? 'Create a Free Account | TaskStack' : 'Krijo llogari falas | TaskStack',
+        'desc'  => $seo_en
+            ? 'Create a free TaskStack account to manage your tasks and reminders. Sign up with email or Google in under a minute. No credit card needed.'
+            : 'Krijo llogari falas në TaskStack për të menaxhuar detyrat dhe përkujtimet. Regjistrohu me email ose Google në më pak se një minutë. Pa kartelë bankare.',
+        'path'  => 'signup.php',
+    ]);
+    ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
