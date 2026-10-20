@@ -2,30 +2,35 @@
 // includes/functions.php
 
 // Escape Output -- mbrojtja nga sulmet XSS
-function e($str) { // teksti nga useri shikohet nga htmlspecialchars per XSS
+function e($str)
+{ // teksti nga useri shikohet nga htmlspecialchars per XSS
     return htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
 }
 
 // CSRF tokeni -- mbrojtja nga sulmet CSRF - Cross Site Request Forgery
-function csrf_token() {
+function csrf_token()
+{
     if (empty($_SESSION['csrf'])) {
         $_SESSION['csrf'] = bin2hex(random_bytes(32));
     }
     return $_SESSION['csrf'];
 }
 
-function verify_csrf($token) { // verifikimi i tokenit te CSRF me lart ^^^
+function verify_csrf($token)
+{ // verifikimi i tokenit te CSRF me lart ^^^
     return isset($_SESSION['csrf']) && hash_equals($_SESSION['csrf'], $token ?? '');
 }
 
 // redirect userin ne URL te caktuar edhe e bon scriptin exit
-function redirect($url) {
+function redirect($url)
+{
     header("Location: $url");
     exit;
 }
 
 // Kontrollon nese useri osht i kyqur, nese jo e perdor funksionin redirect per me kthy ne login
-function require_login() {
+function require_login()
+{
     global $conn;
     validate_session($conn); // sesion i vjeter (pas ndryshimit te passwordit / "mbyll sesionet e tjera") hiqet ketu
     if (empty($_SESSION['user_id'])) {
@@ -41,7 +46,8 @@ function require_login() {
 // =================================================================
 
 // Merr versionin aktual te sesionit per nje user (null nese useri nuk ekziston me)
-function get_session_version($conn, int $user_id): ?int {
+function get_session_version($conn, int $user_id): ?int
+{
     $stmt = $conn->prepare("SELECT session_version FROM regjistrimi WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
@@ -52,7 +58,8 @@ function get_session_version($conn, int $user_id): ?int {
 
 // Rrit versionin => te gjitha sesionet ekzistuese te userit behen te pavlefshme. Kthen versionin e ri.
 // Sesioni aktual duhet ta ruaje versionin e ri vete: $_SESSION['sv'] = bump_session_version(...)
-function bump_session_version($conn, int $user_id): int {
+function bump_session_version($conn, int $user_id): int
+{
     $stmt = $conn->prepare("UPDATE regjistrimi SET session_version = session_version + 1 WHERE id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
@@ -62,7 +69,8 @@ function bump_session_version($conn, int $user_id): int {
 
 // Kyq userin: rigjeneron session ID (mbrojtje session fixation), rrotullon tokenin CSRF
 // dhe ruan versionin aktual te sesionit.
-function login_user($conn, int $user_id, string $username): void {
+function login_user($conn, int $user_id, string $username): void
+{
     $sv = get_session_version($conn, $user_id) ?? 1;
     session_regenerate_id(true);
     unset($_SESSION['csrf']);
@@ -84,7 +92,8 @@ function login_user($conn, int $user_id, string $username): void {
 
 // Kontrollon qe sesioni i kyqur eshte ende i vlefshem: useri ekziston dhe versioni perputhet.
 // Nese jo, e c'kyq sesionin (pa e prekur session ID, qe te mund te thirret edhe pasi ka filluar output-i).
-function validate_session($conn): void {
+function validate_session($conn): void
+{
     static $done = false;
     if ($done || empty($_SESSION['user_id'])) {
         return;
@@ -109,7 +118,8 @@ function validate_session($conn): void {
 }
 
 // Siguron qe useri te ka kategorine default "Inbox"
-function ensure_default_category($conn, $user_id) {
+function ensure_default_category($conn, $user_id)
+{
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM categories WHERE user_id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
@@ -129,12 +139,14 @@ function ensure_default_category($conn, $user_id) {
 }
 
 // Kontrollon qe ngjyra eshte hex e vlefshme (#rrggbb)
-function safe_color($c, $fallback = '#3b82f6') {
+function safe_color($c, $fallback = '#3b82f6')
+{
     return (is_string($c) && preg_match('/^#[0-9a-fA-F]{6}$/', $c)) ? $c : $fallback;
 }
 
 // Ngjyrat qe mund te zgjedhe useri per kategorite
-function category_colors() {
+function category_colors()
+{
     return ['#3b82f6', '#7c3aed', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#64748b'];
 }
 
@@ -151,7 +163,8 @@ define('LOGIN_WINDOW_MINUTES', 15); // 15 minuta nuk mund te tentohet per IP
 define('LOGIN_DUMMY_HASH', '$2y$10$.vGA1O9wmRjrwAVXD98HNOgsNpDczlqm3Jq7KnEd1rVAGv3Fykk1a');
 
 // A eshte IP-ja ne liste (IP te vecanta ose CIDR, te ndara me presje)?
-function ip_in_list(string $ip, string $list): bool {
+function ip_in_list(string $ip, string $list): bool
+{
     $ipBin = @inet_pton($ip);
     if ($ipBin === false) {
         return false;
@@ -185,7 +198,8 @@ function ip_in_list(string $ip, string $list): bool {
 
 // IP e klientit. X-Forwarded-For merret parasysh VETEM nese kerkesa vjen nga nje proxy i listuar ne
 // TRUSTED_PROXIES (.env); perndryshe kushdo mund ta falsifikoje. Pa proxy, perdoret REMOTE_ADDR.
-function client_ip() {
+function client_ip()
+{
     $remote  = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     $trusted = trim((string)($_ENV['TRUSTED_PROXIES'] ?? ''));
     $xff     = (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
@@ -207,14 +221,17 @@ function client_ip() {
 }
 
 // Celesat e rate limiting per llogari (ruhen ne kolonen "ip", max 45 karaktere)
-function account_key(string $email): string {
+function account_key(string $email): string
+{
     return 'a:' . substr(hash('sha256', mb_strtolower(trim($email))), 0, 40);
 }
-function user_key(int $user_id): string {
+function user_key(int $user_id): string
+{
     return 'u:' . $user_id;
 }
 
-function login_attempts_count($conn, $ip) { // kontrollon sa tentativa ka pasur IPja e dhene, nese ka me shume se 5 kthen 0, nese jo kthen numrin e tentativave
+function login_attempts_count($conn, $ip)
+{ // kontrollon sa tentativa ka pasur IPja e dhene, nese ka me shume se 5 kthen 0, nese jo kthen numrin e tentativave
     try {
         $stmt = $conn->prepare(
             "SELECT COUNT(*) AS c FROM login_attempts
@@ -231,7 +248,8 @@ function login_attempts_count($conn, $ip) { // kontrollon sa tentativa ka pasur 
     }
 }
 
-function record_login_attempt($conn, $ip) { // regjistron nje tentative per IP (ose celes llogarie) e dhene
+function record_login_attempt($conn, $ip)
+{ // regjistron nje tentative per IP (ose celes llogarie) e dhene
     try {
         $stmt = $conn->prepare("INSERT INTO login_attempts (ip) VALUES (?)");
         $stmt->bind_param("s", $ip);
@@ -243,7 +261,8 @@ function record_login_attempt($conn, $ip) { // regjistron nje tentative per IP (
     }
 }
 
-function clear_login_attempts($conn, $ip) { // nese useri kyqet me sukses i fshin tentativat e IPse nga databaza
+function clear_login_attempts($conn, $ip)
+{ // nese useri kyqet me sukses i fshin tentativat e IPse nga databaza
     try {
         $stmt = $conn->prepare("DELETE FROM login_attempts WHERE ip = ?");
         $stmt->bind_param("s", $ip);
@@ -256,7 +275,8 @@ function clear_login_attempts($conn, $ip) { // nese useri kyqet me sukses i fshi
 
 // Pastron te dhenat e vjetra (here pas here, ~1 nga 50 kerkesat qe shkruajne ne tabelat e rate limiting):
 // tentativat/kerkesat e vjetra, tokenat e skaduar dhe llogarite e paverifikuara (>3 dite), qe emailet te mos zihen pafund
-function maybe_cleanup($conn): void {
+function maybe_cleanup($conn): void
+{
     if (random_int(1, 50) !== 1) {
         return;
     }
@@ -283,7 +303,8 @@ function maybe_cleanup($conn): void {
 
 define('PASSWORD_MAX_LENGTH', 72); // bcrypt injoron cdo gje mbi 72 bajt
 
-function password_errors(string $pw, string $cpw): array {
+function password_errors(string $pw, string $cpw): array
+{
     $errs = [];
     if (strlen($pw) < 8 || !preg_match('/[A-Za-z]/', $pw) || !preg_match('/\d/', $pw)) {
         $errs[] = 'Password: min 8 karaktere, te pakten 1 shkronje dhe 1 numer.';
@@ -299,12 +320,15 @@ function password_errors(string $pw, string $cpw): array {
 
 // Verifikon passwordin aktual te nje useri ($user duhet te ka 'id' dhe 'password'), me rate limiting
 // per IP dhe per llogari (perdoret nga settings.php dhe google-callback.php)
-function check_current_password(mysqli $conn, array $user, string $given, ?string &$err): bool {
+function check_current_password(mysqli $conn, array $user, string $given, ?string &$err): bool
+{
     $ip   = client_ip();
     $ukey = user_key((int)$user['id']);
 
-    if (login_attempts_count($conn, $ip) >= MAX_LOGIN_ATTEMPTS
-        || login_attempts_count($conn, $ukey) >= MAX_ACCOUNT_ATTEMPTS) {
+    if (
+        login_attempts_count($conn, $ip) >= MAX_LOGIN_ATTEMPTS
+        || login_attempts_count($conn, $ukey) >= MAX_ACCOUNT_ATTEMPTS
+    ) {
         $err = 'Shume tentativa te pasuksesshme. Provo perseri pas ' . LOGIN_WINDOW_MINUTES . ' minutash.';
         return false;
     }

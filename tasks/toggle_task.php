@@ -37,7 +37,6 @@ try {
     $stmt->bind_param("ii", $task_id, $user_id);
     $stmt->execute();
     $stmt->close();
-
 } catch (mysqli_sql_exception $e) {
     error_log("Toggle task error: " . $e->getMessage());
     $_SESSION['flash_error'] = 'Diqka shkoi gabim. Provo perseri.';

@@ -21,7 +21,8 @@ if ($task_id <= 0) {
 // 1. Ngarko taskun - VETEM nese i perket userit
 // ------------------------------------------------------
 
-function load_task($conn, $task_id, $user_id) {
+function load_task($conn, $task_id, $user_id)
+{
     $stmt = $conn->prepare( // ngarko taskun nga databaza, vetem nese i perket userit aktual
         "SELECT id, title, description, priority, due_date, is_completed, category_id
          FROM tasks
@@ -140,7 +141,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $_SESSION['flash_success'] = 'Detyra u perditesua me sukses!';
                 redirect('../dashboard.php');
-
             } catch (mysqli_sql_exception $e) {
                 error_log("Edit task error: " . $e->getMessage());
                 $errors[] = 'Diqka shkoi gabim. Provo perseri.';
@@ -151,6 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="sq">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -160,66 +161,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/style.css">
 </head>
+
 <body>
-<?php require_once __DIR__ . '/../includes/navbar.php'; ?>
+    <?php require_once __DIR__ . '/../includes/navbar.php'; ?>
 
-<main class="page-center">
-    <div class="page-header">
-        <p class="eyebrow">Ndryshime</p>
-        <h1>Edito detyren</h1>
-    </div>
-
-    <?php if (!empty($errors)): ?>
-        <div class="alert error">
-            <?php foreach ($errors as $err): ?>
-                <p><?= e($err) ?></p>
-            <?php endforeach; ?>
+    <main class="page-center">
+        <div class="page-header">
+            <p class="eyebrow">Ndryshime</p>
+            <h1>Edito detyren</h1>
         </div>
-    <?php endif; ?>
 
-    <form method="POST" class="task-form">
-        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-        <input type="hidden" name="id"   value="<?= (int)$task_id ?>">
-
-        <label>Titulli * <span class="counter" id="titleCount"></span></label>
-        <input type="text" name="title" maxlength="255"
-               value="<?= e($old['title']) ?>" required autofocus>
-
-        <label>Pershkrimi (opsional)</label>
-        <textarea name="description" rows="4" maxlength="2000"><?= e($old['description']) ?></textarea>
-
-        <div class="form-row">
-            <div>
-                <label>Prioriteti</label>
-                <select name="priority">
-                    <option value="low"    <?= $old['priority'] === 'low'    ? 'selected' : '' ?>>Low</option>
-                    <option value="medium" <?= $old['priority'] === 'medium' ? 'selected' : '' ?>>Medium</option>
-                    <option value="high"   <?= $old['priority'] === 'high'   ? 'selected' : '' ?>>High</option>
-                </select>
+        <?php if (!empty($errors)): ?>
+            <div class="alert error">
+                <?php foreach ($errors as $err): ?>
+                    <p><?= e($err) ?></p>
+                <?php endforeach; ?>
             </div>
-            <div>
-                <label>Data (opsionale)</label>
-                <input type="date" name="due_date" value="<?= e($old['due_date']) ?>">
+        <?php endif; ?>
+
+        <form method="POST" class="task-form">
+            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+            <input type="hidden" name="id" value="<?= (int)$task_id ?>">
+
+            <label>Titulli * <span class="counter" id="titleCount"></span></label>
+            <input type="text" name="title" maxlength="255"
+                value="<?= e($old['title']) ?>" required autofocus>
+
+            <label>Pershkrimi (opsional)</label>
+            <textarea name="description" rows="4" maxlength="2000"><?= e($old['description']) ?></textarea>
+
+            <div class="form-row">
+                <div>
+                    <label>Prioriteti</label>
+                    <select name="priority">
+                        <option value="low" <?= $old['priority'] === 'low'    ? 'selected' : '' ?>>Low</option>
+                        <option value="medium" <?= $old['priority'] === 'medium' ? 'selected' : '' ?>>Medium</option>
+                        <option value="high" <?= $old['priority'] === 'high'   ? 'selected' : '' ?>>High</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Data (opsionale)</label>
+                    <input type="date" name="due_date" value="<?= e($old['due_date']) ?>">
+                </div>
             </div>
-        </div>
 
-        <label>Kategoria</label>
-        <select name="category_id">
-            <option value="">-- Pa kategori --</option>
-            <?php foreach ($categories as $cat): ?>
-                <option value="<?= (int)$cat['id'] ?>" <?= (string)$old['category_id'] === (string)$cat['id'] ? 'selected' : '' ?>>
-                    <?= e($cat['name']) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
+            <label>Kategoria</label>
+            <select name="category_id">
+                <option value="">-- Pa kategori --</option>
+                <?php foreach ($categories as $cat): ?>
+                    <option value="<?= (int)$cat['id'] ?>" <?= (string)$old['category_id'] === (string)$cat['id'] ? 'selected' : '' ?>>
+                        <?= e($cat['name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
 
-        <div class="form-actions">
-            <a href="../dashboard.php" class="btn-outline">Anulo</a>
-            <button type="submit" class="btn">Ruaj ndryshimet</button>
-        </div>
-    </form>
-</main>
+            <div class="form-actions">
+                <a href="../dashboard.php" class="btn-outline">Anulo</a>
+                <button type="submit" class="btn">Ruaj ndryshimet</button>
+            </div>
+        </form>
+    </main>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+    <?php require_once __DIR__ . '/../includes/footer.php'; ?>
 </body>
+
 </html>

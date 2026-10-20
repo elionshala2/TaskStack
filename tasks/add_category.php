@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') { // kontrollon nese forma eshte derg
 
     if (!verify_csrf($_POST['csrf'] ?? '')) { // kontrollon nese tokeni CSRF eshte valid, nese jo e shton nje gabim ne array
         $errors[] = 'Kerkese e pavlefshme. Provo perseri.';
-    } else { 
+    } else {
         $old['name']  = trim($_POST['name'] ?? '');
         $old['color'] = $_POST['color'] ?? $colors[0];
 
@@ -64,7 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') { // kontrollon nese forma eshte derg
 
                 $_SESSION['flash_success'] = 'Kategoria u shtua me sukses!';
                 redirect('../categories.php');
-
             } catch (mysqli_sql_exception $e) {
                 error_log("Add category error: " . $e->getMessage());
                 $errors[] = 'Diqka shkoi gabim. Provo perseri.';
@@ -75,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') { // kontrollon nese forma eshte derg
 ?>
 <!DOCTYPE html>
 <html lang="sq">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -84,47 +84,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') { // kontrollon nese forma eshte derg
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/style.css">
 </head>
+
 <body>
-<?php require_once __DIR__ . '/../includes/navbar.php'; ?> <!-- e perfshin navbarin nga includes/navbar.php -->
+    <?php require_once __DIR__ . '/../includes/navbar.php'; ?> <!-- e perfshin navbarin nga includes/navbar.php -->
 
-<main class="page-center">
-    <div class="page-header">
-        <p class="eyebrow">Kategori e re</p>
-        <h1>Shto kategori</h1>
-    </div>
-
-    <?php if (!empty($errors)): ?>
-        <div class="alert error">
-            <?php foreach ($errors as $err): ?>
-                <p><?= e($err) ?></p>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-
-    <form method="POST" class="task-form">
-        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-
-        <label>Emri *</label>
-        <input type="text" name="name" maxlength="50"
-               value="<?= e($old['name']) ?>" required autofocus>
-
-        <label>Ngjyra</label>
-        <div class="color-picker">
-            <?php foreach ($colors as $c): ?>
-                <label class="color-opt" style="--c: <?= e($c) ?>;">
-                    <input type="radio" name="color" value="<?= e($c) ?>" <?= $old['color'] === $c ? 'checked' : '' ?>>
-                    <span></span>
-                </label>
-            <?php endforeach; ?>
+    <main class="page-center">
+        <div class="page-header">
+            <p class="eyebrow">Kategori e re</p>
+            <h1>Shto kategori</h1>
         </div>
 
-        <div class="form-actions">
-            <a href="../categories.php" class="btn-outline">Anulo</a>
-            <button type="submit" class="btn">Ruaj</button>
-        </div>
-    </form>
-</main>
+        <?php if (!empty($errors)): ?>
+            <div class="alert error">
+                <?php foreach ($errors as $err): ?>
+                    <p><?= e($err) ?></p>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?> <!-- e perfshin footerin nga includes/footer.php -->
+        <form method="POST" class="task-form">
+            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+
+            <label>Emri *</label>
+            <input type="text" name="name" maxlength="50"
+                value="<?= e($old['name']) ?>" required autofocus>
+
+            <label>Ngjyra</label>
+            <div class="color-picker">
+                <?php foreach ($colors as $c): ?>
+                    <label class="color-opt" style="--c: <?= e($c) ?>;">
+                        <input type="radio" name="color" value="<?= e($c) ?>" <?= $old['color'] === $c ? 'checked' : '' ?>>
+                        <span></span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="form-actions">
+                <a href="../categories.php" class="btn-outline">Anulo</a>
+                <button type="submit" class="btn">Ruaj</button>
+            </div>
+        </form>
+    </main>
+
+    <?php require_once __DIR__ . '/../includes/footer.php'; ?> <!-- e perfshin footerin nga includes/footer.php -->
 </body>
+
 </html>

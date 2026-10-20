@@ -30,6 +30,7 @@ try {
 ?>
 <!DOCTYPE html>
 <html lang="sq">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,28 +40,34 @@ try {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/style.css">
 </head>
+
 <body>
-<?php require_once __DIR__ . '/includes/navbar.php'; ?>
+    <?php require_once __DIR__ . '/includes/navbar.php'; ?>
 
-<div class="auth-layout">
+    <div class="auth-layout">
 
-    <?php require_once __DIR__ . '/includes/auth-side.php'; ?>
+        <?php require_once __DIR__ . '/includes/auth-side.php'; ?>
 
-    <div class="auth-box">
-        <h1>Verifikimi i emailit</h1>
+        <div class="auth-box">
+            <h1>Verifikimi i emailit</h1>
 
-        <?php if ($ok): ?>
-            <div class="alert success"><p>Emaili u verifikua me sukses! Tani mund te kyqesh.</p></div>
-            <p><a href="login.php">Shko te Login &rarr;</a></p>
-        <?php else: ?>
-            <div class="alert error"><p>Ky link eshte i pavlefshem ose ka skaduar.</p></div>
-            <p><a href="resend_verification.php">Dergo nje link te ri verifikimi</a></p>
-            <p><a href="index.php">&larr; Kthehu ne faqen kryesore</a></p>
-        <?php endif; ?>
+            <?php if ($ok): ?>
+                <div class="alert success">
+                    <p>Emaili u verifikua me sukses! Tani mund te kyqesh.</p>
+                </div>
+                <p><a href="login.php">Shko te Login &rarr;</a></p>
+            <?php else: ?>
+                <div class="alert error">
+                    <p>Ky link eshte i pavlefshem ose ka skaduar.</p>
+                </div>
+                <p><a href="resend_verification.php">Dergo nje link te ri verifikimi</a></p>
+                <p><a href="index.php">&larr; Kthehu ne faqen kryesore</a></p>
+            <?php endif; ?>
+        </div>
+
     </div>
 
-</div>
-
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
+    <?php require_once __DIR__ . '/includes/footer.php'; ?>
 </body>
+
 </html>

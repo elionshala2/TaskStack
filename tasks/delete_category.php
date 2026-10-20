@@ -63,7 +63,6 @@ try {
         $_SESSION['flash_success'] = 'Kategoria u fshi me sukses!';
     }
     $stmt->close();
-
 } catch (mysqli_sql_exception $e) {
     error_log("Delete category error: " . $e->getMessage());
     $_SESSION['flash_error'] = 'Diqka shkoi gabim. Provo perseri.';
