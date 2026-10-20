@@ -14,7 +14,7 @@ $username   = $_SESSION['username'] ?? ''; // ruan username nese useri eshte i k
 <html lang="sq">
 
 <head>
-    <meta charset="UTF-8">
+    <meta chqarset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="TaskStack - Organizohu, fokusohu, arri me shume.">
     <title>TaskStack - Organizohu me lehtesi</title>

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard.php
+Disallow: /settings.php
+Disallow: /task-form.php
+Disallow: /login.php
+Disallow: /signup.php
+Disallow: /two_factor.php
+
+Sitemap: http://taskstack.wuaze.com/sitemap.xml
