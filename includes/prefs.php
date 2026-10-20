@@ -7,6 +7,11 @@ const PREF_THEMES = ['dark', 'light'];
 
 function pref_lang(): string
 {
+    // ?lang=en|sq ne URL: cdo gjuhe ka URL te vet qe Google ta indeksoje (hreflang). Ka përparësi mbi cookie.
+    $q = $_GET['lang'] ?? '';
+    if (is_string($q) && in_array($q, PREF_LANGS, true)) {
+        return $q;
+    }
     $l = $_COOKIE['ts_lang'] ?? 'sq';
     return in_array($l, PREF_LANGS, true) ? $l : 'sq';
 }

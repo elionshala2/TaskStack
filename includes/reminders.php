@@ -1,6 +1,6 @@
 <?php
 // includes/reminders.php
-// Kujtesat e afateve: nje email permbledhes ne dite per detyrat e vonuara, per sot dhe per neser.
+// Përkujtimet e afateve: nje email permbledhes ne dite per detyrat e vonuara, per sot dhe per neser.
 // Thirret nga cron/send_reminders.php (1 here ne dite).
 
 require_once __DIR__ . '/mailer.php';
@@ -21,7 +21,7 @@ function reminder_strings(string $lang): array
             'tomorrow' => 'Afati është nesër',
             'more'    => '… dhe {n} të tjera',
             'btn'     => 'Hap Dashboard-in',
-            'note'    => 'Këtë email e merr sepse kujtesat janë aktive. Mund t’i çaktivizosh te Settings.',
+            'note'    => 'Këtë email e merr sepse përkujtimet janë aktive. Mund t’i çaktivizosh te Settings.',
         ],
         'en' => [
             'subject' => 'TaskStack: tasks that need attention',

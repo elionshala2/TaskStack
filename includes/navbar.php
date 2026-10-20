@@ -37,6 +37,8 @@ $cur_lang   = function_exists('pref_lang') ? pref_lang() : 'sq';
         <div class="nav-main">
             <a href="<?= $prefix ?>index.php"
                 class="btn-outline <?= $current === 'index.php' ? 'btn-active' : '' ?>"><?= e(t('nav.home')) ?></a>
+            <a href="<?= $prefix ?>features.php"
+                class="btn-outline <?= $current === 'features.php' ? 'btn-active' : '' ?>"><?= e(t('nav.features')) ?></a>
             <?php if ($isLoggedIn): ?>
                 <a href="<?= $prefix ?>dashboard.php"
                     class="btn-outline <?= in_array($current, $task_pages) ? 'btn-active' : '' ?>"><?= e(t('nav.dashboard')) ?></a>

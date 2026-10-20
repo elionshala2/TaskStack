@@ -42,6 +42,14 @@ if (!defined('APP_SESSION_READY')) {
         header('Referrer-Policy: same-origin');         // URL-te me token (reset, verify) nuk dalin jashte faqes
         header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 
+        // SEO: vetem faqet publike indeksohen; dashboard, settings, login, API etj. marrin noindex
+        $seo_public = ['index.php', 'features.php', 'signup.php', 'privacy.php', 'terms.php'];
+        if (!in_array(basename($_SERVER['SCRIPT_NAME'] ?? ''), $seo_public, true)) {
+            header('X-Robots-Tag: noindex, nofollow');
+        }
+        // permbajtja ndryshon sipas cookie-t te gjuhes: caches nuk duhet ta perzjejne
+        header('Vary: Cookie', false);
+
         // Content-Security-Policy:
         //  - script-src 'self'  -> asnje JS inline, vetem assets/script.js
         //  - style-src          -> 'unsafe-inline' sepse faqet perdorin style="--cat: ..." per ngjyrat

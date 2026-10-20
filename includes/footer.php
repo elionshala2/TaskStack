@@ -20,6 +20,7 @@ $f_loggedIn = !empty($_SESSION['user_id']);
         <nav class="footer-col" aria-label="<?= e(t('footer.product')) ?>">
             <h4><?= e(t('footer.product')) ?></h4>
             <a href="<?= $f_prefix ?>index.php"><?= e(t('nav.home')) ?></a>
+            <a href="<?= $f_prefix ?>features.php"><?= e(t('footer.features')) ?></a>
             <?php if ($f_loggedIn): ?>
                 <a href="<?= $f_prefix ?>dashboard.php"><?= e(t('nav.dashboard')) ?></a>
                 <a href="<?= $f_prefix ?>categories.php"><?= e(t('nav.categories')) ?></a>
@@ -44,6 +45,9 @@ $f_loggedIn = !empty($_SESSION['user_id']);
             <h4><?= e(t('footer.legal')) ?></h4>
             <a href="<?= $f_prefix ?>privacy.php"><?= e(t('footer.privacy')) ?></a>
             <a href="<?= $f_prefix ?>terms.php"><?= e(t('footer.terms')) ?></a>
+            <h4 style="margin-top:10px"><?= e(t('footer.language')) ?></h4>
+            <a href="<?= $f_prefix ?>index.php?lang=sq" hreflang="sq" lang="sq">Shqip</a>
+            <a href="<?= $f_prefix ?>index.php?lang=en" hreflang="en" lang="en">English</a>
         </nav>
 
         <div class="footer-copy">

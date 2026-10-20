@@ -16,7 +16,14 @@ $en = function_exists('pref_lang') && pref_lang() === 'en';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $en ? 'Privacy Policy' : 'Politika e Privatesise' ?> - <?= e($legal_site) ?></title>
+    <?php
+    require_once __DIR__ . '/includes/seo.php';
+    seo_head([
+        'title' => ($en ? 'Privacy Policy' : 'Politika e Privatesise') . ' - ' . $legal_site,
+        'desc'  => $en ? 'TaskStack privacy policy: what data we collect, how we store and protect it, and the choices you have.' : 'Politika e privatësisë e TaskStack: çfarë të dhënash mbledhim, si i ruajmë dhe si i mbrojmë ato, dhe çfarë zgjedhjesh ke.',
+        'path'  => 'privacy.php',
+    ]);
+    ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
