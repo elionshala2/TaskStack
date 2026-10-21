@@ -18,76 +18,126 @@ $L = static fn(string $sq, string $en): string => pref_lang() === 'en' ? $en : $
 $faq = [
     [
         $L('A është TaskStack falas?', 'Is TaskStack free?'),
-        $L('Po. TaskStack është plotësisht falas: nuk ke nevojë për kartelë bankare dhe nuk ka reklama.',
-           'Yes. TaskStack is completely free: no credit card is needed and there are no ads.'),
+        $L(
+            'Po. TaskStack është plotësisht falas: nuk ke nevojë për kartelë bankare dhe nuk ka reklama.',
+            'Yes. TaskStack is completely free: no credit card is needed and there are no ads.'
+        ),
     ],
     [
         $L('Çfarë është TaskStack?', 'What is TaskStack?'),
-        $L('TaskStack është një aplikacion web falas për menaxhimin e detyrave (to-do list). Shton detyra, u cakton prioritet, kategori dhe afat, dhe merr përkujtime me email para se të vonohesh.',
-           'TaskStack is a free web app for managing tasks (a to-do list). You add tasks, give them a priority, category and deadline, and get email reminders before you fall behind.'),
+        $L(
+            'TaskStack është një aplikacion web falas për menaxhimin e detyrave (to-do list). Shton detyra, u cakton prioritet, kategori dhe afat, dhe merr përkujtime me email para se të vonohesh.',
+            'TaskStack is a free web app for managing tasks (a to-do list). You add tasks, give them a priority, category and deadline, and get email reminders before you fall behind.'
+        ),
     ],
     [
         $L('A ka TaskStack përkujtime për detyrat?', 'Does TaskStack have task reminders?'),
-        $L('Po. Kur përkujtimet janë aktive, merr një email përmbledhës në ditë me detyrat e vonuara, ato me afat sot dhe ato me afat nesër. Mund t’i aktivizosh ose çaktivizosh te Settings.',
-           'Yes. When reminders are on, you get one summary email a day listing overdue tasks, tasks due today and tasks due tomorrow. You can turn them on or off in Settings.'),
+        $L(
+            'Po. Kur përkujtimet janë aktive, merr një email përmbledhës në ditë me detyrat e vonuara, ato me afat sot dhe ato me afat nesër. Mund t’i aktivizosh ose çaktivizosh te Settings.',
+            'Yes. When reminders are on, you get one summary email a day listing overdue tasks, tasks due today and tasks due tomorrow. You can turn them on or off in Settings.'
+        ),
     ],
     [
         $L('A mund të hyj me Google?', 'Can I sign in with Google?'),
-        $L('Po. Mund të krijosh llogari ose të hysh me një klikim me Google, pa password të ri. Nëse preferon, mund të regjistrohesh edhe me email dhe password.',
-           'Yes. You can create an account or sign in with one click using Google, with no new password. If you prefer, you can also register with an email and password.'),
+        $L(
+            'Po. Mund të krijosh llogari ose të hysh me një klikim me Google, pa password të ri. Nëse preferon, mund të regjistrohesh edhe me email dhe password.',
+            'Yes. You can create an account or sign in with one click using Google, with no new password. If you prefer, you can also register with an email and password.'
+        ),
     ],
     [
         $L('Çfarë është passkey dhe a e mbështet TaskStack?', 'What is a passkey, and does TaskStack support it?'),
-        $L('Passkey është hyrje pa password me gjurmë gishti, fytyrë ose PIN të pajisjes. TaskStack e mbështet dhe e shton te Settings. Ekziston edhe verifikimi në 2 hapa (2FA) me kod në email.',
-           'A passkey lets you sign in without a password using your fingerprint, face or device PIN. TaskStack supports passkeys, which you add in Settings. Two-step verification (2FA) with an email code is also available.'),
+        $L(
+            'Passkey është hyrje pa password me gjurmë gishti, fytyrë ose PIN të pajisjes. TaskStack e mbështet dhe e shton te Settings. Ekziston edhe verifikimi në 2 hapa (2FA) me kod në email.',
+            'A passkey lets you sign in without a password using your fingerprint, face or device PIN. TaskStack supports passkeys, which you add in Settings. Two-step verification (2FA) with an email code is also available.'
+        ),
     ],
     [
         $L('A janë detyrat e mia të sigurta?', 'Are my tasks safe and private?'),
-        $L('Po. Password-et ruhen të enkriptuara dhe formularët kanë mbrojtje nga sulmet e zakonshme (SQLi, XSS dhe CSRF). Detyrat i sheh vetëm ti.',
-           'Yes. Passwords are stored encrypted and forms are protected against common attacks (SQLi, XSS and CSRF). Only you can see your tasks.'),
+        $L(
+            'Po. Password-et ruhen të enkriptuara dhe formularët kanë mbrojtje nga sulmet e zakonshme (SQLi, XSS dhe CSRF). Detyrat i sheh vetëm ti.',
+            'Yes. Passwords are stored encrypted and forms are protected against common attacks (SQLi, XSS and CSRF). Only you can see your tasks.'
+        ),
     ],
     [
         $L('Si i ndaj dhe i gjej detyrat?', 'How do I organize and find my tasks?'),
-        $L('Çdo detyrë ka kategori me ngjyrë, prioritet (i ulët, mesatar ose i lartë) dhe afat. Në dashboard mund të kërkosh dhe të filtrosh sipas statusit ose kategorisë.',
-           'Every task has a colored category, a priority (low, medium or high) and a deadline. In the dashboard you can search and filter by status or category.'),
+        $L(
+            'Çdo detyrë ka kategori me ngjyrë, prioritet (i ulët, mesatar ose i lartë) dhe afat. Në dashboard mund të kërkosh dhe të filtrosh sipas statusit ose kategorisë.',
+            'Every task has a colored category, a priority (low, medium or high) and a deadline. In the dashboard you can search and filter by status or category.'
+        ),
     ],
     [
         $L('Çfarë ndodh me detyrat e vonuara?', 'What happens to overdue tasks?'),
-        $L('Kur afati kalon, detyra shfaqet me të kuqe dhe në krye të dashboard-it, që të dish menjëherë çfarë ka mbetur prapa. Ato përfshihen edhe në emailin e përkujtimeve.',
-           'When a deadline passes, the task turns red and appears in a banner at the top of the dashboard so you see right away what fell behind. Overdue tasks are also included in the reminder email.'),
+        $L(
+            'Kur afati kalon, detyra shfaqet me të kuqe dhe në krye të dashboard-it, që të dish menjëherë çfarë ka mbetur prapa. Ato përfshihen edhe në emailin e përkujtimeve.',
+            'When a deadline passes, the task turns red and appears in a banner at the top of the dashboard so you see right away what fell behind. Overdue tasks are also included in the reminder email.'
+        ),
     ],
     [
         $L('A funksionon TaskStack në telefon dhe në shqip?', 'Does TaskStack work on phones, and in English and Albanian?'),
-        $L('Po. Faqja është responsive dhe funksionon në laptop, tablet dhe telefon, në çdo shfletues modern. Ndërfaqja është në shqip dhe anglisht, me temë të errët ose të çelët.',
-           'Yes. The site is responsive and works on laptops, tablets and phones in any modern browser. The interface is available in Albanian and English, with a dark or light theme.'),
+        $L(
+            'Po. Faqja është responsive dhe funksionon në laptop, tablet dhe telefon, në çdo shfletues modern. Ndërfaqja është në shqip dhe anglisht, me temë të errët ose të çelët.',
+            'Yes. The site is responsive and works on laptops, tablets and phones in any modern browser. The interface is available in Albanian and English, with a dark or light theme.'
+        ),
     ],
     [
         $L('Si e fshij llogarinë dhe të dhënat e mia?', 'How do I delete my account and data?'),
-        $L('Te Settings mund të ndryshosh username, email dhe password, ose të fshish llogarinë tënde në çdo kohë.',
-           'In Settings you can change your username, email and password, or delete your account at any time.'),
+        $L(
+            'Te Settings mund të ndryshosh username, email dhe password, ose të fshish llogarinë tënde në çdo kohë.',
+            'In Settings you can change your username, email and password, or delete your account at any time.'
+        ),
     ],
 ];
 
 // ---------- Veçoritë (kartat) ----------
 $features = [
-    ['&#9989;', $L('Detyra dhe lista detyrash', 'Tasks and to-do lists'),
-        $L('Shto, edito dhe shëno detyrat si të kryera në pak sekonda. Lista jote e detyrave është gjithmonë e rregullt.',
-           'Add, edit and check off tasks in seconds. Your to-do list stays tidy and easy to scan.')],
-    ['&#128308;', $L('Prioritete të qarta', 'Clear priorities'),
-        $L('Cakto prioritet të ulët, mesatar ose të lartë dhe fokusohu fillimisht te ajo që ka rëndësi.',
-           'Set low, medium or high priority and focus on what matters first.')],
-    ['&#127912;', $L('Kategori me ngjyra', 'Colored categories'),
-        $L('Ndaji detyrat në kategori si Shkollë, Punë ose Sport dhe filtroji me një klikim.',
-           'Group tasks into categories such as School, Work or Fitness and filter them with one click.')],
-    ['&#128197;', $L('Afate dhe detyra të vonuara', 'Deadlines and overdue tasks'),
-        $L('Çdo detyrë mund të ketë afat. Ato që kalojnë afatin theksohen me të kuqe në dashboard.',
-           'Give any task a deadline. Anything past due is highlighted in red on your dashboard.')],
-    ['&#128236;', $L('Përkujtime me email', 'Email reminders'),
-        $L('Një email në ditë me detyrat e vonuara, ato për sot dhe për nesër, që asgjë të mos harrohet.',
-           'One email a day with overdue tasks and what is due today and tomorrow, so nothing gets forgotten.')],
-    ['&#128273;', $L('Hyrje e sigurt', 'Secure sign-in'),
-        $L('Hyr me Google, me passkey (gjurmë gishti ose PIN) ose me verifikim në 2 hapa.',
-           'Sign in with Google, a passkey (fingerprint or PIN) or two-step verification.')],
+    [
+        '&#9989;',
+        $L('Detyra dhe lista detyrash', 'Tasks and to-do lists'),
+        $L(
+            'Shto, edito dhe shëno detyrat si të kryera në pak sekonda. Lista jote e detyrave është gjithmonë e rregullt.',
+            'Add, edit and check off tasks in seconds. Your to-do list stays tidy and easy to scan.'
+        )
+    ],
+    [
+        '&#128308;',
+        $L('Prioritete të qarta', 'Clear priorities'),
+        $L(
+            'Cakto prioritet të ulët, mesatar ose të lartë dhe fokusohu fillimisht te ajo që ka rëndësi.',
+            'Set low, medium or high priority and focus on what matters first.'
+        )
+    ],
+    [
+        '&#127912;',
+        $L('Kategori me ngjyra', 'Colored categories'),
+        $L(
+            'Ndaji detyrat në kategori si Shkollë, Punë ose Sport dhe filtroji me një klikim.',
+            'Group tasks into categories such as School, Work or Fitness and filter them with one click.'
+        )
+    ],
+    [
+        '&#128197;',
+        $L('Afate dhe detyra të vonuara', 'Deadlines and overdue tasks'),
+        $L(
+            'Çdo detyrë mund të ketë afat. Ato që kalojnë afatin theksohen me të kuqe në dashboard.',
+            'Give any task a deadline. Anything past due is highlighted in red on your dashboard.'
+        )
+    ],
+    [
+        '&#128236;',
+        $L('Përkujtime me email', 'Email reminders'),
+        $L(
+            'Një email në ditë me detyrat e vonuara, ato për sot dhe për nesër, që asgjë të mos harrohet.',
+            'One email a day with overdue tasks and what is due today and tomorrow, so nothing gets forgotten.'
+        )
+    ],
+    [
+        '&#128273;',
+        $L('Hyrje e sigurt', 'Secure sign-in'),
+        $L(
+            'Hyr me Google, me passkey (gjurmë gishti ose PIN) ose me verifikim në 2 hapa.',
+            'Sign in with Google, a passkey (fingerprint or PIN) or two-step verification.'
+        )
+    ],
 ];
 
 // ---------- JSON-LD specifik per kete faqe ----------
