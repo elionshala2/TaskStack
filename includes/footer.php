@@ -52,7 +52,7 @@ $f_loggedIn = !empty($_SESSION['user_id']);
 
         <div class="footer-copy">
             <span>&copy; <?= date('Y') ?> TaskStack. <?= e(t('footer.rights')) ?></span>
-            <span>Elion Shala</span>
+            <span>Elion Shala, Edrin Tahiri</span>
         </div>
     </div>
 </footer>
